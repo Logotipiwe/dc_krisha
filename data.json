@@ -1,0 +1,83 @@
+{
+    "html": "dsafghfdsgfdfgfhfd",
+    "priceHistory": [],
+    "adverts": {
+        "689773979": {
+            "id": 689773979,
+            "storage": "live",
+            "commentsType": "adv",
+            "isCommentable": false,
+            "isCommentableByEveryone": false,
+            "isOnMap": true,
+            "hasPrice": true,
+            "price": 240000,
+            "photos": [
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/1-full.jpg",
+                    "w": 900,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/2-full.jpg",
+                    "w": 1600,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/3-full.jpg",
+                    "w": 1600,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/4-full.jpg",
+                    "w": 1600,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/5-full.jpg",
+                    "w": 900,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/6-full.jpg",
+                    "w": 900,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                },
+                {
+                    "src": "https:\/\/alaps-photos-kr.kcdn.kz\/webp\/7f\/7f12a45a-561e-47b9-a21e-73754a904af2\/7-full.jpg",
+                    "w": 900,
+                    "h": 1200,
+                    "title": "lol",
+                    "alt": "lol"
+                }
+            ],
+            "hasPackages": true,
+            "title": "lol",
+            "addresstitle": "lol",
+            "userType": "owner",
+            "square": 47,
+            "rooms": 2,
+            "ownerName": "\u041a\u0430\u0440\u0438\u043d\u0430",
+            "status": "live",
+            "map": {
+                "lat": 43.267932,
+                "lon": 76.943076,
+                "zoom": 14,
+                "type": null
+            }
+        }
+    },
+    "pager": "<nav class=\"paginator keyboard-is-disabled\">\n    \n                        <a class=\"paginator__btn paginator__btn--active\" href=\"\" data-page=\"1\">\n                1\n            <\/a>\n                                <a class=\"paginator__btn \" href=\"?page=2\" data-page=\"2\">\n                2\n            <\/a>\n                                <a class=\"paginator__btn \" href=\"?page=3\" data-page=\"3\">\n                3\n            <\/a>\n                                <a class=\"paginator__btn \" href=\"?page=4\" data-page=\"4\">\n                4\n            <\/a>\n                    <span class=\"paginator__btn\">...<\/span>\n                                <a class=\"paginator__btn \" href=\"?page=7\" data-page=\"7\">\n                7\n            <\/a>\n            \n            <a class=\"paginator__btn paginator__btn--next\" href=\"?page=2\" data-page=\"2\">\n            \n            <span class=\"fi-arrow-small-right\"><\/span>\n        <\/a>\n    <\/nav>\n",
+    "page": 1
+}

@@ -23,6 +23,29 @@ func InitBot() *tgbotapi.BotAPI {
 	return bot
 }
 
+func SendMessageInTgWithImages(msg string, images []string) {
+	ownerChatIdStr := GetOwnerChatID()
+	if ownerChatIdStr == "" {
+		log.Println(errors.New("empty owner chat, unable to send message"))
+		return
+	}
+	ownerChatID, _ := strconv.ParseInt(ownerChatIdStr, 10, 64)
+
+	var message tgbotapi.Chattable
+	message = tgbotapi.NewMessage(ownerChatID, msg)
+	var photos = make([]interface{}, 0)
+	for _, url := range images {
+		photos = append(photos, tgbotapi.NewInputMediaPhoto(tgbotapi.FileURL(url)))
+	}
+	message = tgbotapi.NewMediaGroup(ownerChatID, photos)
+	_, err := Bot.Send(message)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	SendMessageInTg(msg)
+}
+
 func SendMessageInTg(msg string) {
 	ownerChatIdStr := GetOwnerChatID()
 	if ownerChatIdStr == "" {
