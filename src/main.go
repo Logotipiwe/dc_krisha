@@ -5,7 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
-	"krisha/service"
+	"krisha/src/service"
 	"log"
 	"os"
 )
@@ -47,5 +47,6 @@ func initializeApp() (error, *sql.DB) {
 		panic(err)
 	}
 	service.Bot = service.InitBot()
+	service.LogBot = service.InitLogBot()
 	return err, db
 }

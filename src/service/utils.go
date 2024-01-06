@@ -2,9 +2,12 @@ package service
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/logotipiwe/dc_go_config_lib"
+	"log"
+	"strconv"
 )
 
 func InitDb() (error, *sql.DB) {
@@ -22,6 +25,12 @@ func InitDb() (error, *sql.DB) {
 	return nil, conn
 }
 
-func GetOwnerChatID() string {
-	return GetConfig("OWNER_TG_CHAT_ID")
+func GetOwnerChatID() int64 {
+	ownerChatIdStr := GetConfig("OWNER_TG_CHAT_ID")
+	if ownerChatIdStr == "" {
+		log.Println(errors.New("empty owner chat, unable to send message"))
+		return 0
+	}
+	ownerChatID, _ := strconv.ParseInt(ownerChatIdStr, 10, 64)
+	return ownerChatID
 }

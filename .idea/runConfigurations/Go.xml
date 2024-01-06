@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Go" type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="krisha" />
+    <working_directory value="$PROJECT_DIR$" />
+    <envs>
+      <env name="CONFIG_SERVER_URL" value="http://localhost/config_server" />
+      <env name="NAMESPACE" value="dev" />
+      <env name="SERVICE_NAME" value="krisha" />
+      <env name="M_TOKEN" value="4321" />
+    </envs>
+    <kind value="PACKAGE" />
+    <package value="krisha" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
