@@ -1,6 +1,9 @@
-package service
+package domain
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strconv"
+)
 
 type MapData struct {
 	IsTooManyAdverts bool      `json:"isTooManyAdverts"`
@@ -55,7 +58,7 @@ type ApsResultRaw struct {
 	Page         int             `json:"page"`
 }
 
-func (a ApsResultRaw) toResult(aps map[string]*Ap) ApsResult {
+func (a ApsResultRaw) ToResult(aps map[string]*Ap) ApsResult {
 	return ApsResult{
 		HTML:         a.HTML,
 		PriceHistory: a.PriceHistory,
@@ -84,6 +87,10 @@ type Ap struct {
 	OwnerName               string   `json:"ownerName"`
 	Status                  string   `json:"status"`
 	Map                     *Map     `json:"map"`
+}
+
+func (ap Ap) GetLink() string {
+	return "https://krisha.kz/a/show/" + strconv.FormatInt(ap.ID, 10)
 }
 
 type Photo struct {

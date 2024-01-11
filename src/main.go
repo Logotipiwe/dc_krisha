@@ -1,34 +1,34 @@
 package main
 
 import (
-	"database/sql"
 	"github.com/jinzhu/gorm"
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
-	"krisha/src/service"
+	"krisha/src/internal"
+	service2 "krisha/src/pkg"
 	"log"
 	"os"
 )
 
-var db *sql.DB
-
 func init() {
-	err, dbNew := initializeApp()
-	if err != nil {
-		panic(err)
-	}
-	db = dbNew
+
 }
 
 func main() {
 	setLogInFile("app.log")
-	gormDB, err := gorm.Open("mysql", db)
+	err, db := initializeApp()
 	if err != nil {
 		log.Fatal("Failed to initialize gorm: ", err)
 	}
 
-	service.SendMessageInTg("Parser started and waiting for enable...")
-	service.StartParse(gormDB)
+	services := internal.InitServices(db)
+
+	err = services.TgService.SendMessageInTg("Parser started and waiting for enable...")
+	if err != nil {
+		panic(err)
+	}
+	services.TgInteractor.StartHandleTgMessages()
+	services.ParserService.StartParse()
 }
 
 func setLogInFile(s string) {
@@ -40,13 +40,11 @@ func setLogInFile(s string) {
 	log.SetOutput(multi)
 }
 
-func initializeApp() (error, *sql.DB) {
+func initializeApp() (error, *gorm.DB) {
 	config.LoadDcConfigDynamically(3)
-	err, db := service.InitDb()
+	db, err := service2.NewGormDb()
 	if err != nil {
 		panic(err)
 	}
-	service.Bot = service.InitBot()
-	service.LogBot = service.InitLogBot()
 	return err, db
 }
