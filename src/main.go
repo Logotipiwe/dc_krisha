@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
+	"krisha/src/http"
 	"krisha/src/internal"
 	service2 "krisha/src/pkg"
 	"log"
@@ -15,6 +16,7 @@ func init() {
 }
 
 func main() {
+	go http.NewController().Start()
 	setLogInFile("app.log")
 	err, db := initializeApp()
 	if err != nil {

@@ -7,8 +7,6 @@ services:
     networks:
       - dc-net
     environment:
-#      DB_NAME: krisha
-
       #CONFIG SERVER
       CONFIG_SERVER_URL: http://config_server
       SERVICE_NAME: krisha

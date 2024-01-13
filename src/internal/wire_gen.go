@@ -22,7 +22,7 @@ func InitServices(db *gorm.DB) *Services {
 	apsLoggerService := apartments.NewApsLoggerService()
 	tgService := tg.NewTgService()
 	apsTgSenderService := apartments.NewApsTgSenderService(tgService)
-	krishaClientService := api.NewKrishaClientService()
+	krishaClientService := api.NewKrishaClientService(tgService)
 	parserService := service.NewParserService(krishaClientService, apsCacheService, apsTgSenderService, apsLoggerService, tgService, db)
 	tgInteractor := tghttp.NewTgInteractor(tgService)
 	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, parserService, tgService, tgInteractor)
