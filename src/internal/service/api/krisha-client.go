@@ -36,7 +36,7 @@ func NewKrishaClientService(tgService *tg.TgService) *KrishaClientService {
 
 func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain.Ap {
 	data := s.requestMapData(mapDataUrl + filters + "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb")
-	_ = s.tgService.SendLogMessageInTg("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")
+	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")
 	requestUrl := url + filters
 
 	var aps = make(map[string]*domain.Ap)
@@ -52,8 +52,6 @@ func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain
 		jobs = append(jobs, func() map[string]*domain.Ap {
 			println("!!!!!!!!!!!!!! REQUESTING PAGE !!!!!!!!!!!!!!!!!!")
 			return s.requestPage(requestUrl, num).Adverts
-			//println(num)
-			//return map[string]*domain.Ap{}
 		})
 	}
 
@@ -72,23 +70,6 @@ func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain
 			aps[id] = ap
 		}
 	}
-	/*page := 1
-
-	log.Println("Start collecting pages by url " + requestUrl)
-	for hasMore {
-		moreAps := s.requestPage(requestUrl, page).Adverts
-		if len(moreAps) > 0 {
-			for s, i := range moreAps {
-				if _, exists := aps[s]; exists {
-					log.Println("WARINIG! Ap " + s + " already existed and rewritten")
-				}
-				aps[s] = i
-			}
-		} else {
-			hasMore = false
-		}
-		page++
-	}*/
 	log.Println("Collected  " + strconv.Itoa(len(aps)) + " aps")
 	return aps
 }

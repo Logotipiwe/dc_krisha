@@ -4,13 +4,15 @@
 //go:build !wireinject
 // +build !wireinject
 
-package internal
+package main
 
 import (
 	"github.com/jinzhu/gorm"
-	"krisha/src/internal/service"
+	"krisha/src/internal"
+	"krisha/src/internal/repo"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
+	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/tghttp"
 )
@@ -23,8 +25,12 @@ func InitServices(db *gorm.DB) *Services {
 	tgService := tg.NewTgService()
 	apsTgSenderService := apartments.NewApsTgSenderService(tgService)
 	krishaClientService := api.NewKrishaClientService(tgService)
-	parserService := service.NewParserService(krishaClientService, apsCacheService, apsTgSenderService, apsLoggerService, tgService, db)
-	tgInteractor := tghttp.NewTgInteractor(tgService)
-	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, parserService, tgService, tgInteractor)
+	parserSettingsRepository := repo.NewParserSettingsRepository(db)
+	service := parser.NewParserService(parserSettingsRepository)
+	allowedChatRepository := repo.NewAllowedChatRepository(db)
+	permissionsService := internal.NewPermissionsService(allowedChatRepository)
+	tgInteractor := tghttp.NewTgInteractor(tgService, service, permissionsService)
+	factory := parser.NewParserFactory()
+	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, tgService, tgInteractor, factory)
 	return services
 }

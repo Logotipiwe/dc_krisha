@@ -48,10 +48,8 @@ func (s *ApsTgSenderService) LogInTg(data *domain.Ap) error {
 		if len(imagesUrls) > 10 {
 			imagesUrls = imagesUrls[:10]
 		}
-		err := s.tgService.SendMessageInTgWithImages(message, imagesUrls)
-		if err != nil {
-			return err
-		}
+		return s.tgService.SendImgMessageToOwner(message, imagesUrls)
+	} else {
+		return s.tgService.SendMessageToOwner(message)
 	}
-	return s.tgService.SendMessageInTg(message)
 }

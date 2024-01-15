@@ -5,7 +5,6 @@ import (
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
 	"krisha/src/http"
-	"krisha/src/internal"
 	service2 "krisha/src/pkg"
 	"log"
 	"os"
@@ -16,21 +15,22 @@ func init() {
 }
 
 func main() {
-	go http.NewController().Start()
 	setLogInFile("app.log")
 	err, db := initializeApp()
 	if err != nil {
 		log.Fatal("Failed to initialize gorm: ", err)
 	}
 
-	services := internal.InitServices(db)
+	services := InitServices(db)
 
-	err = services.TgService.SendMessageInTg("Parser started and waiting for enable...")
+	err = services.TgService.SendMessageToOwner("Parser started")
 	if err != nil {
 		panic(err)
 	}
-	services.TgInteractor.StartHandleTgMessages()
-	services.ParserService.StartParse()
+
+	services.ParserService.StartParsersFromDb()
+	go services.TgInteractor.StartHandleTgMessages()
+	http.NewController().Start()
 }
 
 func setLogInFile(s string) {

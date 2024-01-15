@@ -28,7 +28,8 @@ func (b *BotAPI) SendMessageInTgWithImages(chatID int64, msg string, images []st
 	}
 	message = tgbotapi.NewMediaGroup(chatID, photos)
 	_, err := b.botAPI.Send(message)
-	if err != nil {
+	//ignore lib error
+	if err != nil && err.Error() != "json: cannot unmarshal array into Go value of type tgbotapi.Message" {
 		log.Println(err)
 		return err
 	}
@@ -45,7 +46,7 @@ func (b *BotAPI) SendMessageInTg(chatID int64, msg string) error {
 	return nil
 }
 
-func (b *BotAPI) ReceiveMessages(handler func(text string) error) {
+func (b *BotAPI) ReceiveMessages(handler func(update tgbotapi.Update) error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := b.botAPI.GetUpdatesChan(u)
@@ -59,7 +60,7 @@ func (b *BotAPI) ReceiveMessages(handler func(text string) error) {
 		}
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-		err := handler(update.Message.Text)
+		err := handler(update)
 		if err != nil {
 			log.Println(err)
 		}
