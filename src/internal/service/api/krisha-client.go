@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	mapDataUrl string = "https://krisha.kz/a/ajax-map/map/arenda/kvartiry/almaty/"
-	url        string = "https://krisha.kz/a/ajax-map-list/map/arenda/kvartiry/almaty/"
-	pageSize   int    = 20
+	mapDataUrl          string = "https://krisha.kz/a/ajax-map/map/arenda/kvartiry/almaty/"
+	url                 string = "https://krisha.kz/a/ajax-map-list/map/arenda/kvartiry/almaty/"
+	pageSize            int    = 20
+	mapDataFilterSuffix        = "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb"
 )
 
 type KrishaClientService struct {
@@ -35,7 +36,7 @@ func NewKrishaClientService(tgService *tg.TgService) *KrishaClientService {
 }
 
 func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain.Ap {
-	data := s.requestMapData(mapDataUrl + filters + "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb")
+	data := s.RequestMapData(filters)
 	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")
 	requestUrl := url + filters
 
@@ -114,9 +115,9 @@ func (s *KrishaClientService) requestPage(url string, page int) domain.ApsResult
 	return resultRaw.ToResult(aps)
 }
 
-func (s *KrishaClientService) requestMapData(url string) domain.MapData {
+func (s *KrishaClientService) RequestMapData(filters string) *domain.MapData {
 
-	req, _ := http.NewRequest("GET", url, nil)
+	req, _ := http.NewRequest("GET", mapDataUrl+filters+mapDataFilterSuffix, nil)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
 
 	log.Println("Requesting map data.json...")
@@ -139,5 +140,5 @@ func (s *KrishaClientService) requestMapData(url string) domain.MapData {
 	if err != nil {
 		panic(err)
 	}
-	return result
+	return &result
 }

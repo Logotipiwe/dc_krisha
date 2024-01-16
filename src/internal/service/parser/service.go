@@ -17,7 +17,7 @@ type Service struct {
 }
 
 const (
-	defaultIntervalSec = 2
+	defaultIntervalSec = 5
 )
 
 //TODO make max allowed aps size
@@ -36,18 +36,14 @@ func NewParserService(
 	}
 }
 
-func (s *Service) InitParserSettings(chatID int64) error {
+func (s *Service) CreateParserSettings(chatID int64) error {
 	parserSettings := domain.ParserSettings{
 		ID:          chatID,
 		IntervalSec: defaultIntervalSec,
 		Enabled:     false,
 		Filters:     "",
 	}
-	err := s.parserSettingsRepo.UpdateOrCreate(&parserSettings)
-	if err != nil {
-		return err
-	}
-	return nil
+	return s.parserSettingsRepo.Create(&parserSettings)
 }
 
 func (s *Service) SetFiltersAndStartParser(chatID int64, filters string) (err error, parserExisted bool) {
@@ -55,18 +51,22 @@ func (s *Service) SetFiltersAndStartParser(chatID int64, filters string) (err er
 	if err != nil {
 		return err, false
 	}
-
 	settings.Filters = filters
-	settings.Enabled = true
-	err = s.parserSettingsRepo.Update(settings)
-	if err != nil {
-		return err, false
-	}
-	parser, has := parsers[chatID]
+	return s.StartParser(settings)
+}
+
+func (s *Service) StartParser(settings *domain.ParserSettings) (error, bool) {
+	existedParser, has := parsers[settings.ID]
 	if has {
-		parser.settings = settings
+		//TODO maybe just recreate parser in this case
+		existedParser.settings = settings
 		return nil, true
 	} else {
+		settings.Enabled = true
+		err := s.parserSettingsRepo.Update(settings)
+		if err != nil {
+			return err, false
+		}
 		return s.startNewParser(settings), false
 	}
 }
@@ -133,4 +133,12 @@ func (s *Service) handleParserStartErr(settings *domain.ParserSettings, err erro
 	settingsJson, _ := json.Marshal(settings)
 	s.tgService.SendLogMessageToOwner(
 		"Error creating parser from db. " + string(settingsJson) + ". " + err.Error())
+}
+
+func (s *Service) GetSettings(chatID int64) (*domain.ParserSettings, error) {
+	settings, err := s.parserSettingsRepo.Get(chatID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ParserNotFoundErr
+	}
+	return settings, nil
 }

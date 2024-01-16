@@ -29,7 +29,7 @@ type Parser struct {
 func newParser(
 	settings *domain.ParserSettings,
 	factory *Factory,
-	// krishaClientService *api.KrishaClientService,
+	// krishaClient *api.KrishaClientService,
 	// apsCacheService *apartments.ApsCacheService,
 	// apsTgSender *apartments.ApsTgSenderService,
 	// apsLoggerService *apartments.ApsLoggerService,
@@ -45,7 +45,7 @@ func newParser(
 		areAllCurrentApsCollected: false,
 		enabled:                   true,
 		//tgService:                 tgService,
-		//KrishaClientService: krishaClientService,
+		//KrishaClientService: krishaClient,
 		//ApsCacheService:     apsCacheService,
 		//ApsTgSenderService:  apsTgSender,
 		//ApsLoggerService:    apsLoggerService,
@@ -69,7 +69,9 @@ func (p *Parser) startParsing() error {
 
 func (p *Parser) doParse() {
 	log.Println("Parse for chat " + strconv.FormatInt(p.settings.ID, 10))
-	p.factory.tgService.SendMessage(p.settings.ID, "Parsed for filter "+p.settings.Filters+". Interval: "+strconv.Itoa(p.settings.IntervalSec))
+	data := p.factory.krishaClient.RequestMapData(p.settings.Filters)
+	p.factory.tgService.SendMessage(p.settings.ID, "Квартир: "+strconv.Itoa(data.NbTotal))
+	//p.factory.tgService.SendMessage(p.settings.ID, "Parsed for filter "+p.settings.Filters+". Interval: "+strconv.Itoa(p.settings.IntervalSec))
 }
 
 func (p *Parser) disable() {

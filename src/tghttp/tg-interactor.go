@@ -91,11 +91,29 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	case text == "/help":
 		return i.tgService.SendMessage(chatID, userHelp)
 	case text == "/start":
-		err := i.parserService.InitParserSettings(chatID)
+		settings, err := i.parserService.GetSettings(chatID)
+		//Settings doesn't exist in db
+		if errors.Is(err, domain.ParserNotFoundErr) {
+			err = i.parserService.CreateParserSettings(chatID)
+			if err != nil {
+				return err
+			}
+			return i.tgService.SendMessage(chatID, startAnswer)
+		}
+		//Settings filters are empty
+		if settings.Filters == "" {
+			return i.tgService.SendMessage(chatID, startAnswer)
+		}
+		//Settings filters are set
+		err, existed := i.parserService.StartParser(settings)
 		if err != nil {
 			return err
 		}
-		return i.tgService.SendMessage(chatID, startAnswer)
+		if existed {
+			return i.tgService.SendMessage(chatID, "Парсер уже запущен")
+		} else {
+			return i.tgService.SendMessage(chatID, "Парсер запущен")
+		}
 	case strings.HasPrefix(text, "?"):
 		err, existed := i.parserService.SetFiltersAndStartParser(chatID, text)
 		if err != nil {
