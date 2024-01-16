@@ -26,6 +26,7 @@ func NewServices(
 	apsLoggerService *apartments.ApsLoggerService,
 	apsTgSenderService *apartments.ApsTgSenderService,
 	krishaClientService *api.KrishaClientService,
+	parserSerivce *parser.Service,
 	tgService *tg.TgService,
 	tgInteractor *tghttp.TgInteractor,
 	parserFactory *parser.Factory,
@@ -38,5 +39,6 @@ func NewServices(
 		TgService:           tgService,
 		TgInteractor:        tgInteractor,
 		ParserFactory:       parserFactory,
+		ParserService:       parserSerivce,
 	}
 }

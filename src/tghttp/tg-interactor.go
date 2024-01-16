@@ -4,6 +4,7 @@ import (
 	"errors"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"krisha/src/internal"
+	"krisha/src/internal/domain"
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
@@ -96,14 +97,21 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		}
 		return i.tgService.SendMessage(chatID, startAnswer)
 	case strings.HasPrefix(text, "?"):
-		err := i.parserService.SetFiltersAndStartParser(chatID, text)
+		err, existed := i.parserService.SetFiltersAndStartParser(chatID, text)
 		if err != nil {
 			return err
 		}
-		return i.tgService.SendMessage(chatID, "Фильтр успешно установлен и парсер запущен")
+		if existed {
+			return i.tgService.SendMessage(chatID, "Фильтр применен")
+		} else {
+			return i.tgService.SendMessage(chatID, "Фильтр успешно установлен и парсер запущен")
+		}
 	case text == "/stop":
 		err := i.parserService.StopParser(chatID)
 		if err != nil {
+			if errors.Is(err, domain.ParserNotFoundErr) {
+				return i.tgService.SendMessage(chatID, "Парсер уже остановлен")
+			}
 			return err
 		}
 		return i.tgService.SendMessage(chatID, "Парсер остановлен")

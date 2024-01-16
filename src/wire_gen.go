@@ -26,11 +26,11 @@ func InitServices(db *gorm.DB) *Services {
 	apsTgSenderService := apartments.NewApsTgSenderService(tgService)
 	krishaClientService := api.NewKrishaClientService(tgService)
 	parserSettingsRepository := repo.NewParserSettingsRepository(db)
-	service := parser.NewParserService(parserSettingsRepository)
+	factory := parser.NewParserFactory(tgService)
+	service := parser.NewParserService(parserSettingsRepository, tgService, factory)
 	allowedChatRepository := repo.NewAllowedChatRepository(db)
 	permissionsService := internal.NewPermissionsService(allowedChatRepository)
 	tgInteractor := tghttp.NewTgInteractor(tgService, service, permissionsService)
-	factory := parser.NewParserFactory()
-	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, tgService, tgInteractor, factory)
+	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, service, tgService, tgInteractor, factory)
 	return services
 }

@@ -16,10 +16,11 @@ type Parser struct {
 	//ApsCacheService     *apartments.ApsCacheService
 	//ApsLoggerService    *apartments.ApsLoggerService
 	//ApsTgSenderService  *apartments.ApsTgSenderService
-	//TgService           *tg.TgService
+	//tgService *tg.TgService
 	//db                  *gorm.DB
 	//parserSettingsRepo  repo.ParserSettingsRepository
 	//
+	factory                   *Factory
 	settings                  *domain.ParserSettings
 	enabled                   bool
 	areAllCurrentApsCollected bool
@@ -27,6 +28,7 @@ type Parser struct {
 
 func newParser(
 	settings *domain.ParserSettings,
+	factory *Factory,
 	// krishaClientService *api.KrishaClientService,
 	// apsCacheService *apartments.ApsCacheService,
 	// apsTgSender *apartments.ApsTgSenderService,
@@ -38,10 +40,11 @@ func newParser(
 	// settings domain.ParserSettings,
 ) *Parser {
 	return &Parser{
+		factory:                   factory,
 		settings:                  settings,
 		areAllCurrentApsCollected: false,
 		enabled:                   true,
-		//TgService:           tgService,
+		//tgService:                 tgService,
 		//KrishaClientService: krishaClientService,
 		//ApsCacheService:     apsCacheService,
 		//ApsTgSenderService:  apsTgSender,
@@ -66,6 +69,7 @@ func (p *Parser) startParsing() error {
 
 func (p *Parser) doParse() {
 	log.Println("Parse for chat " + strconv.FormatInt(p.settings.ID, 10))
+	p.factory.tgService.SendMessage(p.settings.ID, "Parsed for filter "+p.settings.Filters+". Interval: "+strconv.Itoa(p.settings.IntervalSec))
 }
 
 func (p *Parser) disable() {
@@ -124,7 +128,7 @@ func (p *Parser) StartParse(filters string) {
 	//	}
 	//aps = newAps
 	//p.ApsCacheService.AddToCache(newAps)
-	//_ = p.TgService.SendLogMessageToOwner(fmt.Sprintf(
+	//_ = p.tgService.SendLogMessageToOwner(fmt.Sprintf(
 	//	"Collected aps: %p in %p. Next fetch after %p",
 	//	strconv.Itoa(len(aps)), elapsed.String(), p.interval.String()))
 	//var sleeped float64 = 0
