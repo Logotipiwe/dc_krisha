@@ -27,7 +27,7 @@ func InitServices(db *gorm.DB) *Services {
 	krishaClientService := api.NewKrishaClientService(tgService)
 	parserSettingsRepository := repo.NewParserSettingsRepository(db)
 	factory := parser.NewParserFactory(tgService, krishaClientService)
-	service := parser.NewParserService(parserSettingsRepository, tgService, factory)
+	service := parser.NewParserService(parserSettingsRepository, tgService, factory, krishaClientService)
 	allowedChatRepository := repo.NewAllowedChatRepository(db)
 	permissionsService := internal.NewPermissionsService(allowedChatRepository)
 	tgInteractor := tghttp.NewTgInteractor(tgService, service, permissionsService)

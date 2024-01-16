@@ -23,7 +23,7 @@ func (s PermissionsService) HasAccess(chatID int64) bool {
 
 func (s PermissionsService) GrantAccess(chat int64) error {
 	allowedChat := domain.AllowedChat{ChatID: chat}
-	return s.allowedChatRepository.Create(&allowedChat)
+	return s.allowedChatRepository.CreateIfNotExists(&allowedChat)
 }
 
 func (s PermissionsService) DenyAccess(chat int64) error {

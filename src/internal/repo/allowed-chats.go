@@ -19,11 +19,16 @@ func (r *AllowedChatRepository) Create(chat *domain.AllowedChat) error {
 	return r.db.Create(chat).Error
 }
 
-//	func (r *AllowedChatRepository) Get(chatID int) (*domain.AllowedChat, error) {
-//		var chat domain.AllowedChat
-//		err := r.db.First(&chat, chatID).Error
-//		return &chat, err
-//	}
+func (r *AllowedChatRepository) CreateIfNotExists(chat *domain.AllowedChat) error {
+	return r.db.FirstOrCreate(chat).Error
+}
+
+func (r *AllowedChatRepository) Get(chatID int) (*domain.AllowedChat, error) {
+	var chat domain.AllowedChat
+	err := r.db.First(&chat, chatID).Error
+	return &chat, err
+}
+
 func (r *AllowedChatRepository) Delete(chatID int64) error {
 	return r.db.Delete(&domain.AllowedChat{}, "chat_id = ?", chatID).Error
 }

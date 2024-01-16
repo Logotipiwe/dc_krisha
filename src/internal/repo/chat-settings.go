@@ -29,6 +29,7 @@ func (r *ParserSettingsRepository) Update(settings *domain.ParserSettings) error
 		UpdateColumns(map[string]interface{}{
 			"enabled":      settings.Enabled,
 			"filters":      settings.Filters,
+			"aps_limit":    settings.Limit,
 			"interval_sec": settings.IntervalSec},
 		).Error
 }

@@ -6,14 +6,16 @@ import (
 	"github.com/jinzhu/gorm"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/repo"
+	"krisha/src/internal/service/api"
 	"krisha/src/internal/service/tg"
 	"log"
 )
 
 type Service struct {
-	parserSettingsRepo *repo.ParserSettingsRepository
+	ParserSettingsRepo *repo.ParserSettingsRepository
 	parserFactory      *Factory
 	tgService          *tg.TgService
+	krishaClient       *api.KrishaClientService
 }
 
 const (
@@ -28,31 +30,71 @@ func NewParserService(
 	parserSettingsRepo *repo.ParserSettingsRepository,
 	tgService *tg.TgService,
 	parserFactory *Factory,
+	krishaClient *api.KrishaClientService,
 ) *Service {
 	return &Service{
-		parserSettingsRepo: parserSettingsRepo,
+		ParserSettingsRepo: parserSettingsRepo,
 		tgService:          tgService,
 		parserFactory:      parserFactory,
+		krishaClient:       krishaClient,
 	}
 }
 
-func (s *Service) CreateParserSettings(chatID int64) error {
+func (s *Service) CreateParserSettings(chatID int64, limit int) error {
 	parserSettings := domain.ParserSettings{
 		ID:          chatID,
 		IntervalSec: defaultIntervalSec,
 		Enabled:     false,
+		Limit:       limit,
 		Filters:     "",
 	}
-	return s.parserSettingsRepo.Create(&parserSettings)
+	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
 }
 
-func (s *Service) SetFiltersAndStartParser(chatID int64, filters string) (err error, parserExisted bool) {
-	settings, err := s.parserSettingsRepo.Get(chatID)
+func (s *Service) UpdateLimit(settings *domain.ParserSettings, limit int) (err error, stopped bool) {
+	settings.Limit = limit
+	err = s.ParserSettingsRepo.Update(settings)
 	if err != nil {
 		return err, false
 	}
+	err = s.checkLimits(settings)
+	if err != nil {
+		_, has := parsers[settings.ID]
+		if has {
+			return s.StopParser(settings.ID), true
+		}
+	}
+	return nil, false
+}
+
+//func (s *Service) CreateOrUpdateParserSettings(chatID int64, limit int) error {
+//	existing, err := s.ParserSettingsRepo.Get(chatID)
+//	if err != nil {
+//		if errors.Is(err, gorm.ErrRecordNotFound) {
+//			parserSettings := domain.ParserSettings{
+//				ID:          chatID,
+//				IntervalSec: defaultIntervalSec,
+//				Enabled:     false,
+//				Limit:       limit,
+//				Filters:     "",
+//			}
+//			return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
+//		} else {
+//			return err
+//		}
+//	}
+//	existing.Limit = limit
+//	return s.ParserSettingsRepo.Update(existing)
+//}
+
+func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettings, error) {
+	settings, err := s.ParserSettingsRepo.Get(chatID)
+	if err != nil {
+		return nil, err
+	}
 	settings.Filters = filters
-	return s.StartParser(settings)
+	err = s.ParserSettingsRepo.Update(settings)
+	return settings, err
 }
 
 func (s *Service) StartParser(settings *domain.ParserSettings) (error, bool) {
@@ -62,13 +104,26 @@ func (s *Service) StartParser(settings *domain.ParserSettings) (error, bool) {
 		existedParser.settings = settings
 		return nil, true
 	} else {
+		err := s.checkLimits(settings)
+		if err != nil {
+			return err, false
+		}
 		settings.Enabled = true
-		err := s.parserSettingsRepo.Update(settings)
+		err = s.ParserSettingsRepo.Update(settings)
 		if err != nil {
 			return err, false
 		}
 		return s.startNewParser(settings), false
 	}
+}
+
+func (s *Service) checkLimits(settings *domain.ParserSettings) error {
+	mapData := s.krishaClient.RequestMapData(settings.Filters)
+	apsCount := mapData.NbTotal
+	if apsCount > settings.Limit {
+		return domain.LimitExceededErr
+	}
+	return nil
 }
 
 func (s *Service) startNewParser(settings *domain.ParserSettings) error {
@@ -82,7 +137,7 @@ func (s *Service) startNewParser(settings *domain.ParserSettings) error {
 }
 
 func (s *Service) StopParser(chatID int64) error {
-	settings, err := s.parserSettingsRepo.Get(chatID)
+	settings, err := s.ParserSettingsRepo.Get(chatID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return domain.ParserNotFoundErr
@@ -95,7 +150,7 @@ func (s *Service) StopParser(chatID int64) error {
 	}
 
 	settings.Enabled = false
-	err = s.parserSettingsRepo.Update(settings)
+	err = s.ParserSettingsRepo.Update(settings)
 	if err != nil {
 		return err
 	}
@@ -106,7 +161,7 @@ func (s *Service) StopParser(chatID int64) error {
 }
 
 func (s *Service) StartParsersFromDb() error {
-	settingsFromDb, err := s.parserSettingsRepo.GetAll()
+	settingsFromDb, err := s.ParserSettingsRepo.GetAll()
 	if err != nil {
 		log.Println("Failed to get parser settings from the database:", err)
 		return err
@@ -135,10 +190,7 @@ func (s *Service) handleParserStartErr(settings *domain.ParserSettings, err erro
 		"Error creating parser from db. " + string(settingsJson) + ". " + err.Error())
 }
 
-func (s *Service) GetSettings(chatID int64) (*domain.ParserSettings, error) {
-	settings, err := s.parserSettingsRepo.Get(chatID)
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, domain.ParserNotFoundErr
-	}
-	return settings, nil
+func (s *Service) GetSettings(chatID int64) (*domain.ParserSettings, bool, error) {
+	settings, err := s.ParserSettingsRepo.Get(chatID)
+	return settings, !errors.Is(err, gorm.ErrRecordNotFound), err
 }
