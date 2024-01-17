@@ -60,6 +60,8 @@ github.com/logotipiwe/dc_go_config_lib v1.0.3 h1:6w/+CbMTGIWcl/rr74PW8U7ICHQ1svF
 github.com/logotipiwe/dc_go_config_lib v1.0.3/go.mod h1:LzIt8/ud7iDd0xUgg+J0gCW+7YPKUCc4otyZU8HlhYI=
 github.com/logotipiwe/dc_go_config_lib v1.0.4 h1:qJ5YL6a/2Ol43Gpr/P7fLt9gnTi2ZoTNv1mHoqktt1Y=
 github.com/logotipiwe/dc_go_config_lib v1.0.4/go.mod h1:LzIt8/ud7iDd0xUgg+J0gCW+7YPKUCc4otyZU8HlhYI=
+github.com/logotipiwe/dc_go_config_lib v1.0.5 h1:FoZzY2bdJ8lUcOFsGEGJxcZV6Z9xg3Fh0JdeDtsMiKc=
+github.com/logotipiwe/dc_go_config_lib v1.0.5/go.mod h1:LzIt8/ud7iDd0xUgg+J0gCW+7YPKUCc4otyZU8HlhYI=
 github.com/mattn/go-isatty v0.0.19 h1:JITubQf0MOLdlGRuRq+jtsDlekdYPia9ZFsB8h/APPA=
 github.com/mattn/go-isatty v0.0.19/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mattn/go-sqlite3 v1.14.0/go.mod h1:JIl7NbARA7phWnGvh0LKTyg7S9BA+6gx71ShQilpsus=
