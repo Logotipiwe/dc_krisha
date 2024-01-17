@@ -1,4 +1,4 @@
-package service
+package pkg
 
 import (
 	"database/sql"
@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	. "github.com/logotipiwe/dc_go_config_lib"
 	"log"
+	"math"
 	"strconv"
 )
 
@@ -33,4 +34,16 @@ func GetOwnerChatID() int64 {
 	}
 	ownerChatID, _ := strconv.ParseInt(ownerChatIdStr, 10, 64)
 	return ownerChatID
+}
+
+func Map[T any, U any](input []T, mapper func(T) U) []U {
+	result := make([]U, 0)
+	for _, value := range input {
+		result = append(result, mapper(value))
+	}
+	return result
+}
+
+func Min(x int, y int) int {
+	return int(math.Min(float64(x), float64(y)))
 }
