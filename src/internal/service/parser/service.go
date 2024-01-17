@@ -82,26 +82,6 @@ func (s *Service) UpdateLimit(settings *domain.ParserSettings, limit int) (err e
 	return nil, false
 }
 
-//func (s *Service) CreateOrUpdateParserSettings(chatID int64, limit int) error {
-//	existing, err := s.ParserSettingsRepo.Get(chatID)
-//	if err != nil {
-//		if errors.Is(err, gorm.ErrRecordNotFound) {
-//			parserSettings := domain.ParserSettings{
-//				ID:          chatID,
-//				IntervalSec: defaultIntervalSec,
-//				Enabled:     false,
-//				Limit:       limit,
-//				Filters:     "",
-//			}
-//			return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
-//		} else {
-//			return err
-//		}
-//	}
-//	existing.Limit = limit
-//	return s.ParserSettingsRepo.Update(existing)
-//}
-
 func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettings, error) {
 	settings, err := s.ParserSettingsRepo.Get(chatID)
 	if err != nil {

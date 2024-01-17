@@ -10,7 +10,6 @@ import (
 )
 
 type Services struct {
-	ApsCacheService     *apartments.ApsCacheService
 	ApsLoggerService    *apartments.ApsLoggerService
 	ApsTgSenderService  *apartments.ApsTgSenderService
 	KrishaClientService *api.KrishaClientService
@@ -22,7 +21,6 @@ type Services struct {
 }
 
 func NewServices(
-	apsCacheService *apartments.ApsCacheService,
 	apsLoggerService *apartments.ApsLoggerService,
 	apsTgSenderService *apartments.ApsTgSenderService,
 	krishaClientService *api.KrishaClientService,
@@ -32,7 +30,6 @@ func NewServices(
 	parserFactory *parser.Factory,
 ) *Services {
 	return &Services{
-		ApsCacheService:     apsCacheService,
 		ApsLoggerService:    apsLoggerService,
 		ApsTgSenderService:  apsTgSenderService,
 		KrishaClientService: krishaClientService,

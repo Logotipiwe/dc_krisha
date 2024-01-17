@@ -20,4 +20,4 @@ create table if not exists allowed_chats (
     chat_id bigint not null primary key
 );
 
-INSERT INTO parsers_settings (chat_id, filters, interval_sec, aps_limit, enabled) VALUES (214583870, '', 60, 20000, false);
+INSERT INTO parsers_settings (chat_id, filters, interval_sec, aps_limit, enabled) VALUES (214583870, '', 120, 20000, false);

@@ -35,7 +35,6 @@ func NewKrishaClientService(tgService *tg.TgService) *KrishaClientService {
 	}
 }
 
-// TODO когда ставишь новый фильтр на лету - надо пересоздать парсер
 func (s *KrishaClientService) CollectAllPages(filters string, stopped *bool) map[string]*domain.Ap {
 	data := s.RequestMapData(filters)
 	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")

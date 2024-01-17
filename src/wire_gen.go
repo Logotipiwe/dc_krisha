@@ -20,7 +20,6 @@ import (
 // Injectors from di.go:
 
 func InitServices(db *gorm.DB) *Services {
-	apsCacheService := apartments.NewApsCacheService()
 	apsLoggerService := apartments.NewApsLoggerService()
 	tgService := tg.NewTgService()
 	apsTgSenderService := apartments.NewApsTgSenderService(tgService)
@@ -31,6 +30,6 @@ func InitServices(db *gorm.DB) *Services {
 	allowedChatRepository := repo.NewAllowedChatRepository(db)
 	permissionsService := internal.NewPermissionsService(allowedChatRepository)
 	tgInteractor := tghttp.NewTgInteractor(tgService, service, permissionsService)
-	services := NewServices(apsCacheService, apsLoggerService, apsTgSenderService, krishaClientService, service, tgService, tgInteractor, factory)
+	services := NewServices(apsLoggerService, apsTgSenderService, krishaClientService, service, tgService, tgInteractor, factory)
 	return services
 }

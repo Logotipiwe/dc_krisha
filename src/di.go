@@ -21,7 +21,6 @@ func InitServices(db *gorm.DB) *Services {
 		tghttp.NewTgInteractor,
 		api.NewKrishaClientService,
 		apartments.NewApsTgSenderService,
-		apartments.NewApsCacheService,
 		apartments.NewApsLoggerService,
 		parser.NewParserService,
 		repo.NewParserSettingsRepository,
