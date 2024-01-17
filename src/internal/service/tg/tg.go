@@ -27,9 +27,9 @@ func (s *TgService) SendMessage(chatID int64, text string) error {
 	return s.bot.SendMessageInTg(chatID, text)
 }
 
-func (s *TgService) SendLogMessage(chatID int64, text string) error {
-	return s.logBot.SendMessageInTg(chatID, text)
-}
+//func (s *TgService) SendLogMessage(chatID int64, text string) error {
+//	return s.logBot.SendMessageInTg(chatID, text)
+//}
 
 func (s *TgService) SendImgMessage(chatID int64, msg string, images []string) error {
 	return s.bot.SendMessageInTgWithImages(chatID, msg, images)

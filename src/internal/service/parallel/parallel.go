@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-func DoJobs[T any](jobs []func() T, workersCount int) []T {
+func DoJobs[T any](jobs []func() T, workersCount int, stopped *bool) []T {
 	wg := sync.WaitGroup{}
 	count := len(jobs)
 	jobsCh := make(chan func() T, count)
@@ -18,6 +18,9 @@ func DoJobs[T any](jobs []func() T, workersCount int) []T {
 		go func() {
 			defer wg.Done()
 			for job := range jobsCh {
+				if *stopped {
+					break
+				}
 				resultsCh <- job()
 			}
 		}()

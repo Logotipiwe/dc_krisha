@@ -35,12 +35,13 @@ func NewKrishaClientService(tgService *tg.TgService) *KrishaClientService {
 	}
 }
 
-func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain.Ap {
+// TODO когда ставишь новый фильтр на лету - надо пересоздать парсер
+func (s *KrishaClientService) CollectAllPages(filters string, stopped *bool) map[string]*domain.Ap {
 	data := s.RequestMapData(filters)
 	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")
 	requestUrl := url + filters
 
-	var aps = make(map[string]*domain.Ap)
+	aps := make(map[string]*domain.Ap)
 	if data.NbTotal <= 0 {
 		return aps
 	}
@@ -49,7 +50,7 @@ func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain
 	log.Println("Start collecting pages by url " + requestUrl)
 	jobs := make([]func() map[string]*domain.Ap, 0)
 	for i := 0; i < requestsCount; i++ {
-		num := i
+		num := i + 1
 		jobs = append(jobs, func() map[string]*domain.Ap {
 			println("!!!!!!!!!!!!!! REQUESTING PAGE !!!!!!!!!!!!!!!!!!")
 			return s.requestPage(requestUrl, num).Adverts
@@ -61,8 +62,10 @@ func (s *KrishaClientService) CollectAllPages(filters string) map[string]*domain
 		log.Println(err)
 		workersNum = 1
 	}
-	pages := parallel.DoJobs(jobs, workersNum)
-
+	pages := parallel.DoJobs(jobs, workersNum, stopped)
+	if *stopped {
+		return nil
+	}
 	for _, mapp := range pages {
 		for id, ap := range mapp {
 			if _, exists := aps[id]; exists {

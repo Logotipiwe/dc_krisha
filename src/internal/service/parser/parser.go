@@ -1,7 +1,9 @@
 package parser
 
 import (
+	"fmt"
 	"krisha/src/internal/domain"
+	"krisha/src/pkg"
 	"log"
 	"strconv"
 	"time"
@@ -12,70 +14,94 @@ import (
 //var Enabled = false
 
 type Parser struct {
-	//KrishaClientService *api.KrishaClientService
-	//ApsCacheService     *apartments.ApsCacheService
-	//ApsLoggerService    *apartments.ApsLoggerService
-	//ApsTgSenderService  *apartments.ApsTgSenderService
-	//tgService *tg.TgService
-	//db                  *gorm.DB
-	//parserSettingsRepo  repo.ParserSettingsRepository
-	//
-	factory                   *Factory
-	settings                  *domain.ParserSettings
-	enabled                   bool
-	areAllCurrentApsCollected bool
+	factory                    *Factory
+	settings                   *domain.ParserSettings
+	enabled                    bool
+	areAllCurrentApsCollected  bool
+	areCollectApsTriesExceeded bool
+	collectedAps               map[string]*domain.Ap
+	stopped                    bool
+	initialApsCountInFilter    int
 }
 
-func newParser(
-	settings *domain.ParserSettings,
-	factory *Factory,
-	// krishaClient *api.KrishaClientService,
-	// apsCacheService *apartments.ApsCacheService,
-	// apsTgSender *apartments.ApsTgSenderService,
-	// apsLoggerService *apartments.ApsLoggerService,
-	// tgService *tg.TgService,
-	// db *gorm.DB,
-	// repository repo.ParserSettingsRepository,
-	//
-	// settings domain.ParserSettings,
-) *Parser {
+func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factory) *Parser {
 	return &Parser{
-		factory:                   factory,
-		settings:                  settings,
-		areAllCurrentApsCollected: false,
-		enabled:                   true,
-		//tgService:                 tgService,
-		//KrishaClientService: krishaClient,
-		//ApsCacheService:     apsCacheService,
-		//ApsTgSenderService:  apsTgSender,
-		//ApsLoggerService:    apsLoggerService,
-		//db:                  db,
-		//parserSettingsRepo:        repository,
-		//settings:                  settings,
-		//areAllCurrentApsCollected: false,
+		factory:                    factory,
+		settings:                   settings,
+		areAllCurrentApsCollected:  false,
+		areCollectApsTriesExceeded: false,
+		enabled:                    true,
+		collectedAps:               make(map[string]*domain.Ap),
+		stopped:                    false,
+		initialApsCountInFilter:    apsInFilter,
 	}
 }
 
 func (p *Parser) startParsing() error {
 	p.enabled = true
 	go func() {
+		p.initParsing()
+		p.doParseForCollectAps()
 		for p.enabled {
-			p.doParse()
+			p.doParseWithNotification()
 			time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
 		}
 	}()
 	return nil
 }
 
-func (p *Parser) doParse() {
+func (p *Parser) initParsing() {
 	log.Println("Parse for chat " + strconv.FormatInt(p.settings.ID, 10))
 	data := p.factory.krishaClient.RequestMapData(p.settings.Filters)
 	p.factory.tgService.SendMessage(p.settings.ID, "Квартир: "+strconv.Itoa(data.NbTotal))
-	//p.factory.tgService.SendMessage(p.settings.ID, "Parsed for filter "+p.settings.Filters+". Interval: "+strconv.Itoa(p.settings.IntervalSec))
+	p.factory.tgService.SendLogMessageToOwner(fmt.Sprintf(
+		"Parser started for chat %v. filter %v. Interval: %v", p.settings.ID, p.settings.Filters, p.settings.IntervalSec))
+}
+
+func (p *Parser) doParseWithNotification() {
+	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, &p.stopped)
+	if !p.enabled {
+		return
+	}
+	for id, ap := range aps {
+		_, has := p.collectedAps[id]
+		if !has {
+			photosUrls := pkg.Map(ap.Photos, func(p *domain.Photo) string {
+				return p.Src
+			})
+			p.factory.tgService.SendImgMessage(p.settings.ID, "Новая квартира: "+ap.GetLink(), photosUrls[0:pkg.Min(len(photosUrls), 10)])
+		}
+		p.collectedAps[id] = ap
+	}
+}
+
+func (p *Parser) doParseForCollectAps() {
+	p.factory.tgService.SendMessage(p.settings.ID, "Начинаю собирать существующие квартиры, это займет немного времени...")
+	attempts := 0
+	for !p.areAllCurrentApsCollected && !p.areCollectApsTriesExceeded {
+		aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, &p.stopped)
+		if p.stopped {
+			return
+		}
+		for id, ap := range aps {
+			p.collectedAps[id] = ap
+		}
+		attempts++
+
+		if len(p.collectedAps) >= p.initialApsCountInFilter {
+			p.areAllCurrentApsCollected = true
+			p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, начинаю присылать уведомления о новых...")
+		}
+		if attempts > 5 {
+			p.areCollectApsTriesExceeded = true
+			p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, но из-за большого их количества в фильтре - могут иногда присылаться уведомления не по новым квартирам, а по уже существующим")
+		}
+	}
 }
 
 func (p *Parser) disable() {
 	p.enabled = false
+	p.stopped = true
 }
 
 func (p *Parser) StartParse(filters string) {
@@ -93,7 +119,7 @@ func (p *Parser) StartParse(filters string) {
 	//continue
 	//} else {
 	//	if p.areAllCurrentApsCollected {
-	//		p.doParse()
+	//		p.doParseWithNotification()
 	//	} else {
 	//		p.doCollectAps()
 	//	}

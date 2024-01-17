@@ -31,7 +31,8 @@ func (c *Controller) handleEndpoint1(context *gin.Context) {
 			return strconv.Itoa(i)
 		})
 	}
-	result := parallel.DoJobs(jobs, 4)
+	lol := false
+	result := parallel.DoJobs(jobs, 4, &lol)
 	context.String(http.StatusOK, "Requests completed: "+strings.Join(result, ","))
 }
 

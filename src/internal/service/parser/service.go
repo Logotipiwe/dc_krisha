@@ -3,11 +3,13 @@ package parser
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/repo"
 	"krisha/src/internal/service/api"
 	"krisha/src/internal/service/tg"
+	"krisha/src/pkg"
 	"log"
 )
 
@@ -19,10 +21,8 @@ type Service struct {
 }
 
 const (
-	defaultIntervalSec = 5
+	DefaultIntervalSec = 10
 )
-
-//TODO make max allowed aps size
 
 var parsers = make(map[int64]*Parser)
 
@@ -40,10 +40,21 @@ func NewParserService(
 	}
 }
 
+func (s *Service) InitOwnerParserSettings() error {
+	parserSettings := domain.ParserSettings{
+		ID:          pkg.GetOwnerChatID(),
+		IntervalSec: DefaultIntervalSec,
+		Enabled:     false,
+		Limit:       20000,
+		Filters:     "",
+	}
+	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
+}
+
 func (s *Service) CreateParserSettings(chatID int64, limit int) error {
 	parserSettings := domain.ParserSettings{
 		ID:          chatID,
-		IntervalSec: defaultIntervalSec,
+		IntervalSec: DefaultIntervalSec,
 		Enabled:     false,
 		Limit:       limit,
 		Filters:     "",
@@ -57,13 +68,14 @@ func (s *Service) UpdateLimit(settings *domain.ParserSettings, limit int) (err e
 	if err != nil {
 		return err, false
 	}
-	err = s.checkLimits(settings)
+	err, _ = s.checkLimits(settings)
 	if err != nil {
 		_, has := parsers[settings.ID]
 		if has {
 			return s.StopParser(settings.ID), true
 		}
 	}
+	s.tgService.SendMessage(settings.ID, fmt.Sprintf("Ваш лимит изменен на %v квартир", limit))
 	return nil, false
 }
 
@@ -97,14 +109,14 @@ func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettin
 	return settings, err
 }
 
-func (s *Service) StartParser(settings *domain.ParserSettings) (error, bool) {
+func (s *Service) StartParser(settings *domain.ParserSettings) (err error, existed bool) {
 	existedParser, has := parsers[settings.ID]
 	if has {
 		//TODO maybe just recreate parser in this case
 		existedParser.settings = settings
 		return nil, true
 	} else {
-		err := s.checkLimits(settings)
+		err, apsCount := s.checkLimits(settings)
 		if err != nil {
 			return err, false
 		}
@@ -113,21 +125,21 @@ func (s *Service) StartParser(settings *domain.ParserSettings) (error, bool) {
 		if err != nil {
 			return err, false
 		}
-		return s.startNewParser(settings), false
+		return s.startNewParser(settings, apsCount), false
 	}
 }
 
-func (s *Service) checkLimits(settings *domain.ParserSettings) error {
+func (s *Service) checkLimits(settings *domain.ParserSettings) (err error, apsCount int) {
 	mapData := s.krishaClient.RequestMapData(settings.Filters)
-	apsCount := mapData.NbTotal
+	apsCount = mapData.NbTotal
 	if apsCount > settings.Limit {
-		return domain.LimitExceededErr
+		return domain.LimitExceededErr, apsCount
 	}
-	return nil
+	return nil, apsCount
 }
 
-func (s *Service) startNewParser(settings *domain.ParserSettings) error {
-	parser, err := s.parserFactory.CreateParser(settings)
+func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter int) error {
+	parser, err := s.parserFactory.CreateParser(settings, apsInFilter)
 	if err != nil {
 		return err
 	}
@@ -169,16 +181,10 @@ func (s *Service) StartParsersFromDb() error {
 
 	for _, settings := range settingsFromDb {
 		if settings.Enabled {
-			parser, err := s.parserFactory.CreateParser(settings)
+			err, _ := s.StartParser(settings)
 			if err != nil {
 				s.handleParserStartErr(settings, err)
-				continue
 			}
-			if err = parser.startParsing(); err != nil {
-				s.handleParserStartErr(settings, err)
-				continue
-			}
-			parsers[settings.ID] = parser
 		}
 	}
 	return nil

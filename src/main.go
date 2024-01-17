@@ -28,7 +28,14 @@ func main() {
 		panic(err)
 	}
 
-	services.ParserService.StartParsersFromDb()
+	err = services.ParserService.InitOwnerParserSettings()
+	if err != nil {
+		panic(err)
+	}
+	err = services.ParserService.StartParsersFromDb()
+	if err != nil {
+		panic(err)
+	}
 	go services.TgInteractor.StartHandleTgMessages()
 	http.NewController().Start()
 }
