@@ -21,7 +21,7 @@ type Service struct {
 }
 
 const (
-	DefaultIntervalSec = 10
+	DefaultIntervalSec = 120
 )
 
 var parsers = make(map[int64]*Parser)
@@ -109,24 +109,28 @@ func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettin
 	return settings, err
 }
 
-func (s *Service) StartParser(settings *domain.ParserSettings) (err error, existed bool) {
-	existedParser, has := parsers[settings.ID]
+func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists bool) (err error, existed bool) {
+	_, has := parsers[settings.ID]
 	if has {
-		//TODO maybe just recreate parser in this case
-		existedParser.settings = settings
-		return nil, true
-	} else {
-		err, apsCount := s.checkLimits(settings)
-		if err != nil {
-			return err, false
+		if !restartIfExists {
+			return nil, true
+		} else {
+			err := s.StopParser(settings.ID)
+			if err != nil {
+				return err, true
+			}
 		}
-		settings.Enabled = true
-		err = s.ParserSettingsRepo.Update(settings)
-		if err != nil {
-			return err, false
-		}
-		return s.startNewParser(settings, apsCount), false
 	}
+	err, apsCount := s.checkLimits(settings)
+	if err != nil {
+		return err, false
+	}
+	settings.Enabled = true
+	err = s.ParserSettingsRepo.Update(settings)
+	if err != nil {
+		return err, false
+	}
+	return s.startNewParser(settings, apsCount), false
 }
 
 func (s *Service) checkLimits(settings *domain.ParserSettings) (err error, apsCount int) {
@@ -181,7 +185,7 @@ func (s *Service) StartParsersFromDb() error {
 
 	for _, settings := range settingsFromDb {
 		if settings.Enabled {
-			err, _ := s.StartParser(settings)
+			err, _ := s.StartParser(settings, false)
 			if err != nil {
 				s.handleParserStartErr(settings, err)
 			}

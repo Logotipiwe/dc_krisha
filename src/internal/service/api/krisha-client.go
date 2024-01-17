@@ -66,10 +66,10 @@ func (s *KrishaClientService) CollectAllPages(filters string, stopped *bool) map
 	if *stopped {
 		return nil
 	}
-	for _, mapp := range pages {
+	for pageIndex, mapp := range pages {
 		for id, ap := range mapp {
 			if _, exists := aps[id]; exists {
-				log.Println("WARINIG! Ap " + id + " already existed and rewritten")
+				log.Printf("WARINIG! Ap %v from page %v already existed and rewritten", id, pageIndex+1)
 			}
 			aps[id] = ap
 		}

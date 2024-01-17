@@ -101,12 +101,12 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		if err != nil {
 			return err
 		}
-		err, existed := i.parserService.StartParser(settings)
+		err, existed := i.parserService.StartParser(settings, true)
 		if err != nil {
 			return i.handleStartParserErr(settings, err)
 		}
 		if existed {
-			return i.tgService.SendMessage(chatID, "Фильтр применен")
+			return i.tgService.SendMessage(chatID, "Фильтр применен, перезапускаюсь...")
 		} else {
 			return i.tgService.SendMessage(chatID, "Фильтр успешно установлен и парсер запущен")
 		}
@@ -135,7 +135,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 	if settings.Filters == "" {
 		return i.tgService.SendMessage(chatID, startAnswer)
 	}
-	err, existed := i.parserService.StartParser(settings)
+	err, existed := i.parserService.StartParser(settings, false)
 	if err != nil {
 		return i.handleStartParserErr(settings, err)
 	}

@@ -43,8 +43,8 @@ func (p *Parser) startParsing() error {
 		p.initParsing()
 		p.doParseForCollectAps()
 		for p.enabled {
-			p.doParseWithNotification()
 			time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
+			p.doParseWithNotification()
 		}
 	}()
 	return nil
