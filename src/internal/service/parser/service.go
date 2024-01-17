@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	config "github.com/logotipiwe/dc_go_config_lib"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/repo"
 	"krisha/src/internal/service/api"
@@ -20,9 +21,7 @@ type Service struct {
 	krishaClient       *api.KrishaClientService
 }
 
-const (
-	DefaultIntervalSec = 120
-)
+var DefaultIntervalSec = 120
 
 var parsers = make(map[int64]*Parser)
 
@@ -32,6 +31,10 @@ func NewParserService(
 	parserFactory *Factory,
 	krishaClient *api.KrishaClientService,
 ) *Service {
+	defaultIntervalSec, intErr := config.GetConfigInt("DEFAULT_INTERVAL")
+	if intErr == nil && defaultIntervalSec > 0 {
+		DefaultIntervalSec = defaultIntervalSec
+	}
 	return &Service{
 		ParserSettingsRepo: parserSettingsRepo,
 		tgService:          tgService,
