@@ -200,7 +200,7 @@ func (s *Service) handleParserStartErr(settings *domain.ParserSettings, err erro
 		"Error creating parser from db. " + string(settingsJson) + ". " + err.Error())
 }
 
-func (s *Service) GetSettings(chatID int64) (*domain.ParserSettings, bool, error) {
-	settings, err := s.ParserSettingsRepo.Get(chatID)
-	return settings, !errors.Is(err, gorm.ErrRecordNotFound), err
+func (s *Service) GetSettings(chatID int64) (settings *domain.ParserSettings, isErrNotFound bool, err error) {
+	settings, err = s.ParserSettingsRepo.Get(chatID)
+	return settings, errors.Is(err, gorm.ErrRecordNotFound), err
 }

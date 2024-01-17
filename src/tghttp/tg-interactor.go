@@ -62,7 +62,11 @@ func NewTgInteractor(
 func (i *TgInteractor) acceptMessage(update tgbotapi.Update) error {
 	err := i.acceptMessageUnsafe(update)
 	if err != nil {
-		i.tgService.SendMessage(update.Message.Chat.ID, errorMessage)
+		if update.Message.Chat.ID == pkg.GetOwnerChatID() {
+			i.tgService.SendMessageToOwner(errorMessage + "\r\n" + err.Error())
+		} else {
+			i.tgService.SendMessage(update.Message.Chat.ID, errorMessage)
+		}
 	}
 	return err
 }
@@ -96,8 +100,12 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		return i.tgService.SendMessage(chatID, userHelp)
 	case text == "/start":
 		return i.handleUserStartCommand(chatID)
-	case strings.HasPrefix(text, "?"):
-		settings, err := i.parserService.SetFilters(chatID, text)
+	case strings.Contains(text, "krisha.kz"):
+		pair := strings.Split(text, "?")
+		if len(pair) < 2 {
+			return i.tgService.SendMessage(chatID, "Неверный формат ссылки с фильтрами. Ссылка должна начинаться на krisha.kz и содержать фильтры через знак ?")
+		}
+		settings, err := i.parserService.SetFilters(chatID, "?"+pair[1])
 		if err != nil {
 			return err
 		}
@@ -124,14 +132,24 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 }
 
 func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
-	settings, has, err := i.parserService.GetSettings(chatID)
+	settings, isErrNotFound, err := i.parserService.GetSettings(chatID)
 	autoGrantLimit, intErr := config.GetConfigInt("AUTO_GRANT_LIMIT")
-	if !has && intErr == nil && autoGrantLimit > 0 {
-		err = i.parserService.CreateParserSettings(chatID, autoGrantLimit)
+
+	if isErrNotFound {
+		if intErr == nil && autoGrantLimit > 0 {
+			err = i.parserService.CreateParserSettings(chatID, autoGrantLimit)
+			if err != nil {
+				return err
+			}
+		} else {
+			return i.tgService.SendMessage(chatID, "У вашего чата есть доступ, но для него не найдено нужных настроек. Обратитесь к администратору")
+		}
+	} else {
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
+
 	if settings.Filters == "" {
 		return i.tgService.SendMessage(chatID, startAnswer)
 	}
@@ -179,13 +197,16 @@ func (i *TgInteractor) handleDenyCommand(text string) error {
 		i.ownerChatMode = denying
 		return i.tgService.SendMessageToOwner("Кажется это не число, попробуй ещё раз")
 	}
+	stopParserErr := i.parserService.StopParser(denyingChat)
 	if !i.permissionsService.HasAccess(denyingChat) {
 		return i.tgService.SendMessageToOwner("У этого чата и так нет доступа. Спасибо")
 	}
-	//TODO stop chat parser
 	err = i.permissionsService.DenyAccess(denyingChat)
 	if err != nil {
 		return err
+	}
+	if !errors.Is(stopParserErr, domain.ParserNotFoundErr) {
+		i.tgService.SendMessage(denyingChat, "Парсер остановлен, обратитесь к администратору")
 	}
 	return i.tgService.SendMessageToOwner("Доступ запрещен чату " + text)
 }
@@ -200,22 +221,22 @@ func (i *TgInteractor) handleGrantCommand(text string) error {
 	if err != nil {
 		return err
 	}
-	settings, found, err := i.parserService.GetSettings(grantingChat)
-	if err != nil {
+	settings, isErrNotFound, err := i.parserService.GetSettings(grantingChat)
+	if err != nil && !isErrNotFound {
 		return err
 	}
-	if found {
+	if isErrNotFound {
+		err = i.parserService.CreateParserSettings(grantingChat, limit)
+		if err != nil {
+			return err
+		}
+	} else {
 		err, stopped := i.parserService.UpdateLimit(settings, limit)
 		if err != nil {
 			return err
 		}
 		if stopped {
 			return i.tgService.SendMessage(grantingChat, fmt.Sprintf(limitExceededMessageFormat, limit))
-		}
-	} else {
-		err = i.parserService.CreateParserSettings(grantingChat, limit)
-		if err != nil {
-			return err
 		}
 	}
 	return i.tgService.SendMessageToOwner(
