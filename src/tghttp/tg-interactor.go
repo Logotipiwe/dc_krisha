@@ -114,11 +114,11 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	}
 
 	switch {
-	case text == "/help":
+	case strings.HasPrefix(text, "/help"):
 		return i.tgService.SendMessage(chatID, userHelp)
-	case text == "/helpFilter":
+	case strings.HasPrefix(text, "/helpFilter"):
 		return i.tgService.SendMessage(chatID, helpFilterAnswer)
-	case text == "/start":
+	case strings.HasPrefix(text, "/start"):
 		return i.handleUserStartCommand(chatID)
 	case strings.Contains(text, "krisha.kz"):
 		pair := strings.Split(text, "?")
@@ -138,7 +138,7 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		} else {
 			return i.tgService.SendMessage(chatID, "Фильтр успешно установлен и парсер запущен")
 		}
-	case text == "/stop":
+	case strings.HasPrefix(text, "/stop"):
 		err := i.parserService.StopParser(chatID)
 		if err != nil {
 			if errors.Is(err, domain.ParserNotFoundErr) {
