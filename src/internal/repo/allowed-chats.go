@@ -16,11 +16,15 @@ func NewAllowedChatRepository(db *gorm.DB) *AllowedChatRepository {
 }
 
 func (r *AllowedChatRepository) Create(chat *domain.AllowedChat) error {
-	return r.db.Create(chat).Error
+	return r.db.Debug().Create(chat).Error
 }
 
 func (r *AllowedChatRepository) CreateIfNotExists(chat *domain.AllowedChat) error {
-	return r.db.FirstOrCreate(chat).Error
+	if r.Exists(chat.ChatID) {
+		log.Printf("Access for chat %v already granted", chat.ChatID)
+		return nil
+	}
+	return r.Create(chat)
 }
 
 func (r *AllowedChatRepository) Get(chatID int) (*domain.AllowedChat, error) {
