@@ -35,7 +35,7 @@ const (
 /grant - выдать доступ
 /deny - забрать доступ`
 	userHelp = `Бот работает следующим образом:
-1. Вы отправляете фильтры, по которым ищете квартиру. Инструкция - /helpFilter
+1. Вы отправляете фильтры, по которым ищете квартиру. Инструкция - /filterHelp
 2. Бот присылает вам уведомления о новых квартирах
 3. Вы можете писать /stop или /start, чтобы отключать или включать обратно уведомления
 4. Вы можете отправить другой фильтр, чтобы бот перенастроился на него`
@@ -43,7 +43,7 @@ const (
 	errorMessage         = "Произошла ошибка :( \r\n Попробуйте начать заново с /start"
 	startAnswer          = `Привет! Это бот для получения уведомлений о новых квартирах по фильтрам. Для начала работы нужно установить нужный фильтр.
 /help - общая информация и инструкция.`
-	helpFilterAnswer = `Чтобы установить фильтр, нужно:
+	filterHelpAnswer = `Чтобы установить фильтр, нужно:
 1. Зайти на https://krisha.kz/map/arenda/kvartiry/almaty/
 
 2. Выбрать нужные фильтры в панели над картой (полезно бывает обвести область или поставить "от хозяев"). У вашего чата есть ограничение по количеству квартир в фильтре, поэтому постарайтесь оставить только те, которые вас правда интересуют
@@ -116,8 +116,8 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	switch {
 	case strings.HasPrefix(text, "/help"):
 		return i.tgService.SendMessage(chatID, userHelp)
-	case strings.HasPrefix(text, "/helpFilter"):
-		return i.tgService.SendMessage(chatID, helpFilterAnswer)
+	case strings.HasPrefix(text, "/filterHelp"):
+		return i.tgService.SendMessage(chatID, filterHelpAnswer)
 	case strings.HasPrefix(text, "/start"):
 		return i.handleUserStartCommand(chatID)
 	case strings.Contains(text, "krisha.kz"):
