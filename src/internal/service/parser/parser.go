@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"github.com/Logotipiwe/krisha_model/model"
 	"krisha/src/internal/domain"
 	"krisha/src/pkg"
 	"log"
@@ -15,7 +16,7 @@ type Parser struct {
 	enabled                    bool
 	areAllCurrentApsCollected  bool
 	areCollectApsTriesExceeded bool
-	collectedAps               map[string]*domain.Ap
+	collectedAps               map[string]*model.Ap
 	stopped                    bool
 	initialApsCountInFilter    int
 }
@@ -27,7 +28,7 @@ func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factor
 		areAllCurrentApsCollected:  false,
 		areCollectApsTriesExceeded: false,
 		enabled:                    true,
-		collectedAps:               make(map[string]*domain.Ap),
+		collectedAps:               make(map[string]*model.Ap),
 		stopped:                    false,
 		initialApsCountInFilter:    apsInFilter,
 	}
@@ -55,14 +56,14 @@ func (p *Parser) initParsing() {
 }
 
 func (p *Parser) doParseWithNotification() {
-	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, &p.stopped)
+	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
 	if !p.enabled {
 		return
 	}
 	for id, ap := range aps {
 		_, has := p.collectedAps[id]
 		if !has {
-			photosUrls := pkg.Map(ap.Photos, func(p *domain.Photo) string {
+			photosUrls := pkg.Map(ap.Photos, func(p *model.Photo) string {
 				return p.Src
 			})
 			p.factory.tgService.SendImgMessage(p.settings.ID, "Новая квартира: "+ap.GetLink(), photosUrls[0:pkg.Min(len(photosUrls), 10)])
@@ -76,7 +77,7 @@ func (p *Parser) doParseForCollectAps() {
 	p.factory.tgService.SendMessage(p.settings.ID, "Начинаю собирать существующие квартиры, это займет немного времени...")
 	attempts := 0
 	for !p.areAllCurrentApsCollected && !p.areCollectApsTriesExceeded {
-		aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, &p.stopped)
+		aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
 		if p.stopped {
 			return
 		}

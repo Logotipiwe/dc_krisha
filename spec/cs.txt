@@ -3,3 +3,12 @@ REQUEST_WORKERS_NUM
 DB_NAME
 LOG_BOT_TOKEN
 OWNER_TG_CHAT_ID
+
+TARGET_HOST -
+    default "https://krisha.kz"
+TARGET_MAPDATA_PATH -
+    default "/a/ajax-map/map/arenda/kvartiry/almaty/"
+TARGET_PATH -
+    default "/a/ajax-map-list/map/arenda/kvartiry/almaty/"
+TARGET_MAPDATA_FILTER_PARAMS -
+    default "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb"

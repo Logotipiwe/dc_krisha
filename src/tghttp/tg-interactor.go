@@ -15,7 +15,7 @@ import (
 )
 
 type TgInteractor struct {
-	tgService          *tg.TgService
+	tgService          tg.TgServicer
 	parserService      *parser.Service
 	permissionsService *internal.PermissionsService
 	ownerChatMode      OwnerChatMode
@@ -41,7 +41,7 @@ const (
 4. Вы можете отправить другой фильтр, чтобы бот перенастроился на него`
 	ownerUnacceptedError = "unknown admin command"
 	errorMessage         = "Произошла ошибка :( \r\n Попробуйте начать заново с /start"
-	startAnswer          = `Привет! Это бот для получения уведомлений о новых квартирах по фильтрам. Для начала работы нужно установить нужный фильтр.
+	StartAnswer          = `Привет! Это бот для получения уведомлений о новых квартирах по фильтрам. Для начала работы нужно установить нужный фильтр.
 /help - общая информация и инструкция.`
 	filterHelpAnswer = `Чтобы установить фильтр, нужно:
 1. Зайти на https://krisha.kz/map/arenda/kvartiry/almaty/
@@ -65,7 +65,7 @@ https://krisha.kz/map/arenda/kvartiry/almaty/?areas=&das[live.rooms]=1&das[price
 )
 
 func NewTgInteractor(
-	tgService *tg.TgService,
+	tgService tg.TgServicer,
 	parserService *parser.Service,
 	permissionsService *internal.PermissionsService,
 ) *TgInteractor {
@@ -77,7 +77,7 @@ func NewTgInteractor(
 	}
 }
 
-func (i *TgInteractor) acceptMessage(update tgbotapi.Update) error {
+func (i *TgInteractor) AcceptMessage(update tgbotapi.Update) error {
 	err := i.acceptMessageUnsafe(update)
 	if err != nil {
 		if update.Message.Chat.ID == pkg.GetOwnerChatID() {
@@ -105,6 +105,11 @@ func (i *TgInteractor) acceptMessageUnsafe(update tgbotapi.Update) error {
 func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
 	chatID := update.Message.Chat.ID
+
+	err := i.createParserSettingsFromAutoGrantIfNeeded(chatID)
+	if err != nil {
+		return err
+	}
 
 	hasAccess := i.permissionsService.HasAccess(chatID)
 	isOwner := chatID == pkg.GetOwnerChatID()
@@ -155,9 +160,10 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 	settings, isErrNotFound, err := i.parserService.GetSettings(chatID)
 	autoGrantLimit, intErr := config.GetConfigInt("AUTO_GRANT_LIMIT")
 
+	//TODO убрать выпилить выдачу доступа, оно уже сделано
 	if isErrNotFound {
 		if intErr == nil && autoGrantLimit > 0 {
-			err = i.parserService.CreateParserSettings(chatID, autoGrantLimit)
+			err = i.parserService.CreateParserSettingsFromAutoGrant(chatID)
 			if err != nil {
 				return err
 			}
@@ -171,7 +177,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 	}
 
 	if settings.Filters == "" {
-		return i.tgService.SendMessage(chatID, startAnswer)
+		return i.tgService.SendMessage(chatID, StartAnswer)
 	}
 	err, existed := i.parserService.StartParser(settings, false)
 	if err != nil {
@@ -246,12 +252,12 @@ func (i *TgInteractor) handleGrantCommand(text string) error {
 		return err
 	}
 	if isErrNotFound {
-		err = i.parserService.CreateParserSettings(grantingChat, limit)
+		err = i.parserService.CreateParserSettingsFromExplicitGrant(grantingChat, limit)
 		if err != nil {
 			return err
 		}
 	} else {
-		err, stopped := i.parserService.UpdateLimit(settings, limit)
+		err, stopped := i.parserService.UpdateLimitExplicitly(settings, limit)
 		if err != nil {
 			return err
 		}
@@ -282,12 +288,35 @@ func parseGrantMessage(text string) (int64, int, error) {
 }
 
 func (i *TgInteractor) StartHandleTgMessages() {
-	i.tgService.StartReceiveMessages(i.acceptMessage)
+	i.tgService.StartReceiveMessages(i.AcceptMessage)
 }
 
 func (i *TgInteractor) handleStartParserErr(settings *domain.ParserSettings, err error) error {
 	if errors.Is(err, domain.LimitExceededErr) {
-		return i.tgService.SendMessage(settings.ID, fmt.Sprintf(limitExceededMessageFormat, settings.Limit))
+		var limit int
+		if settings.IsGrantedExplicitly {
+			limit = settings.Limit
+		} else {
+			limit = pkg.GetAutoGrantLimit()
+		}
+		return i.tgService.SendMessage(settings.ID, fmt.Sprintf(limitExceededMessageFormat, limit))
+	}
+	return nil
+}
+
+func (i *TgInteractor) createParserSettingsFromAutoGrantIfNeeded(chatID int64) error {
+	_, isErrNotFound, err := i.parserService.GetSettings(chatID)
+	autoGrantLimit, _ := config.GetConfigInt("AUTO_GRANT_LIMIT")
+
+	if !isErrNotFound {
+		if err != nil {
+			return err
+		}
+	} else if autoGrantLimit > 0 {
+		err = i.parserService.CreateParserSettingsFromAutoGrant(chatID)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

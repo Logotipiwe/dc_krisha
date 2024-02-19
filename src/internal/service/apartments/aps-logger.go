@@ -2,7 +2,7 @@ package apartments
 
 import (
 	"fmt"
-	"krisha/src/internal/domain"
+	"github.com/Logotipiwe/krisha_model/model"
 	"krisha/src/internal/service/tg"
 	"log"
 	"strconv"
@@ -14,12 +14,12 @@ func NewApsLoggerService() *ApsLoggerService {
 	return &ApsLoggerService{}
 }
 
-func (s *ApsLoggerService) LogMissingAp(m *domain.Ap) {
+func (s *ApsLoggerService) LogMissingAp(m *model.Ap) {
 	log.Println(fmt.Sprintf("Missing ap %s", strconv.FormatInt(m.ID, 10)))
 	log.Println(m)
 }
 
-func (s *ApsLoggerService) LogNewAp(data *domain.Ap) {
+func (s *ApsLoggerService) LogNewAp(data *model.Ap) {
 	log.Println("=======================================================================")
 	log.Println("NEW AP FOUND")
 	log.Println("ID:")
@@ -30,14 +30,14 @@ func (s *ApsLoggerService) LogNewAp(data *domain.Ap) {
 }
 
 type ApsTgSenderService struct {
-	tgService *tg.TgService
+	tgService tg.TgServicer
 }
 
-func NewApsTgSenderService(tgService *tg.TgService) *ApsTgSenderService {
+func NewApsTgSenderService(tgService tg.TgServicer) *ApsTgSenderService {
 	return &ApsTgSenderService{tgService}
 }
 
-func (s *ApsTgSenderService) LogInTg(data *domain.Ap) error {
+func (s *ApsTgSenderService) LogInTg(data *model.Ap) error {
 	var imagesUrls = make([]string, 0)
 	photos := data.Photos
 	message := fmt.Sprintf("Link: %s\r\n", data.GetLink())

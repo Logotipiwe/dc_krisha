@@ -14,7 +14,7 @@ services:
       M_TOKEN: ${M_TOKEN}
       #END CONFIG SERVER
     ports:
-      - 83:8082
+      - 83:8083
 networks:
   dc-net:
     external: true

@@ -12,12 +12,13 @@ import (
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
 	"log"
+	"strconv"
 )
 
 type Service struct {
 	ParserSettingsRepo *repo.ParserSettingsRepository
 	parserFactory      *Factory
-	tgService          *tg.TgService
+	tgService          tg.TgServicer
 	krishaClient       *api.KrishaClientService
 }
 
@@ -27,7 +28,7 @@ var parsers = make(map[int64]*Parser)
 
 func NewParserService(
 	parserSettingsRepo *repo.ParserSettingsRepository,
-	tgService *tg.TgService,
+	tgService tg.TgServicer,
 	parserFactory *Factory,
 	krishaClient *api.KrishaClientService,
 ) *Service {
@@ -43,30 +44,45 @@ func NewParserService(
 	}
 }
 
-func (s *Service) InitOwnerParserSettings() error {
+func (s *Service) InitOwnerParserSettings() (error, *domain.ParserSettings) {
 	parserSettings := domain.ParserSettings{
-		ID:          pkg.GetOwnerChatID(),
-		IntervalSec: DefaultIntervalSec,
-		Enabled:     false,
-		Limit:       20000,
-		Filters:     "",
+		ID:                  pkg.GetOwnerChatID(),
+		IntervalSec:         DefaultIntervalSec,
+		Enabled:             false,
+		Limit:               20000,
+		Filters:             "",
+		IsGrantedExplicitly: true,
+	}
+	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings), &parserSettings
+}
+
+func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, limit int) error {
+	parserSettings := domain.ParserSettings{
+		ID:                  chatID,
+		IntervalSec:         DefaultIntervalSec,
+		Enabled:             false,
+		Limit:               limit,
+		Filters:             "",
+		IsGrantedExplicitly: true,
 	}
 	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
 }
 
-func (s *Service) CreateParserSettings(chatID int64, limit int) error {
+func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64) error {
 	parserSettings := domain.ParserSettings{
-		ID:          chatID,
-		IntervalSec: DefaultIntervalSec,
-		Enabled:     false,
-		Limit:       limit,
-		Filters:     "",
+		ID:                  chatID,
+		IntervalSec:         DefaultIntervalSec,
+		Enabled:             false,
+		Limit:               0,
+		Filters:             "",
+		IsGrantedExplicitly: false,
 	}
 	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
 }
 
-func (s *Service) UpdateLimit(settings *domain.ParserSettings, limit int) (err error, stopped bool) {
+func (s *Service) UpdateLimitExplicitly(settings *domain.ParserSettings, limit int) (err error, stopped bool) {
 	settings.Limit = limit
+	settings.IsGrantedExplicitly = true
 	err = s.ParserSettingsRepo.Update(settings)
 	if err != nil {
 		return err, false
@@ -83,6 +99,14 @@ func (s *Service) UpdateLimit(settings *domain.ParserSettings, limit int) (err e
 }
 
 func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettings, error) {
+	if chatID == pkg.GetOwnerChatID() {
+		err, _ := s.InitOwnerParserSettings()
+		if err != nil {
+			wrapper := errors.New("error creating settings for admin")
+			wrapper = errors.Join(err, wrapper)
+			return nil, wrapper
+		}
+	}
 	settings, err := s.ParserSettingsRepo.Get(chatID)
 	if err != nil {
 		return nil, err
@@ -119,7 +143,13 @@ func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists b
 func (s *Service) checkLimits(settings *domain.ParserSettings) (err error, apsCount int) {
 	mapData := s.krishaClient.RequestMapData(settings.Filters)
 	apsCount = mapData.NbTotal
-	if apsCount > settings.Limit {
+	var limit int
+	if pkg.GetAutoGrantLimit() > 0 {
+		limit = pkg.GetAutoGrantLimit()
+	} else {
+		limit = settings.Limit
+	}
+	if apsCount > limit {
 		return domain.LimitExceededErr, apsCount
 	}
 	return nil, apsCount
@@ -156,6 +186,7 @@ func (s *Service) StopParser(chatID int64) error {
 
 	parser.disable()
 	delete(parsers, chatID)
+	s.tgService.SendLogMessageToOwner("Parser stopped for chat " + strconv.FormatInt(chatID, 10))
 	return nil
 }
 
@@ -185,5 +216,23 @@ func (s *Service) handleParserStartErr(settings *domain.ParserSettings, err erro
 
 func (s *Service) GetSettings(chatID int64) (settings *domain.ParserSettings, isErrNotFound bool, err error) {
 	settings, err = s.ParserSettingsRepo.Get(chatID)
+	if errors.Is(err, gorm.ErrRecordNotFound) && chatID == pkg.GetOwnerChatID() {
+		err, parserSettings := s.InitOwnerParserSettings()
+		return parserSettings, false, err
+	}
 	return settings, errors.Is(err, gorm.ErrRecordNotFound), err
+}
+
+func (s *Service) StopAllParsersOnlyInGoroutines() error {
+	availableParsers := make(map[int64]*Parser)
+	for chatID, parser := range parsers {
+		availableParsers[chatID] = parser
+	}
+	for chatID, _ := range availableParsers {
+		err := s.StopParser(chatID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

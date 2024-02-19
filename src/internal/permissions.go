@@ -1,9 +1,9 @@
 package internal
 
 import (
-	config "github.com/logotipiwe/dc_go_config_lib"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/repo"
+	"krisha/src/pkg"
 )
 
 type PermissionsService struct {
@@ -23,11 +23,7 @@ func (s PermissionsService) HasAccess(chatID int64) bool {
 	if allowed {
 		return true
 	}
-	configInt, intErr := config.GetConfigInt("AUTO_GRANT_LIMIT")
-	if intErr != nil {
-		return false
-	}
-	return configInt > 0
+	return pkg.GetAutoGrantLimit() > 0
 }
 
 func (s PermissionsService) GrantAccess(chat int64) error {

@@ -13,10 +13,6 @@ func NewParserSettingsRepository(db *gorm.DB) *ParserSettingsRepository {
 	return &ParserSettingsRepository{db: db}
 }
 
-func (r *ParserSettingsRepository) Create(chat *domain.ParserSettings) error {
-	return r.db.Create(chat).Error
-}
-
 func (r *ParserSettingsRepository) Get(chatID int64) (*domain.ParserSettings, error) {
 	var chat domain.ParserSettings
 	err := r.db.First(&chat, "chat_id = ?", chatID).Error

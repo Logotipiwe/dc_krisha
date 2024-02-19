@@ -47,3 +47,16 @@ func Map[T any, U any](input []T, mapper func(T) U) []U {
 func Min(x int, y int) int {
 	return int(math.Min(float64(x), float64(y)))
 }
+
+func IsTesting() bool {
+	is, _ := GetConfigBool("IS_TESTING")
+	return is
+}
+
+func GetAutoGrantLimit() int {
+	configInt, err := GetConfigInt("AUTO_GRANT_LIMIT")
+	if err != nil {
+		return 0
+	}
+	return configInt
+}

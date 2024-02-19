@@ -2,7 +2,6 @@ package tg
 
 import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	. "krisha/src/pkg"
 	"log"
 )
 
@@ -55,9 +54,7 @@ func (b *BotAPI) ReceiveMessages(handler func(update tgbotapi.Update) error) {
 			continue
 		}
 
-		if update.Message.Chat.ID != GetOwnerChatID() {
-			log.Printf("Received message from unauthorized chat: %d", update.Message.Chat.ID)
-		}
+		log.Printf("Received message from chat: %d", update.Message.Chat.ID)
 
 		log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
 		err := handler(update)
