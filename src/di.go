@@ -9,6 +9,7 @@ import (
 	"krisha/src/http"
 	"krisha/src/internal"
 	"krisha/src/internal/repo"
+	"krisha/src/internal/service/admin"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
 	"krisha/src/internal/service/parser"
@@ -28,6 +29,7 @@ func InitServices(db *gorm.DB, tgServicer tg.TgServicer) *Services {
 		repo.NewAllowedChatRepository,
 		internal.NewPermissionsService,
 		parser.NewParserFactory,
+		admin.NewService,
 		NewServices,
 	)
 	return &Services{}

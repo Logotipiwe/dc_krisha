@@ -60,3 +60,7 @@ func GetAutoGrantLimit() int {
 	}
 	return configInt
 }
+
+func GetAutoStopTime() string {
+	return GetConfig("AUTO_STOP_TIME")
+}

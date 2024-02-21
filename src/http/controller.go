@@ -55,15 +55,15 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 			c.JSON(200, tg.GetSentMessages())
 		})
 		testGroup.POST("/reset", func(c *gin.Context) {
-			fmt.Println("Clearing all db data!")
-			err := db.Begin().
-				Exec("TRUNCATE TABLE krisha.allowed_chats").
-				Exec("TRUNCATE TABLE krisha.parsers_settings").Commit().Error
+			err := parserService.StopAllParsersOnlyInGoroutines()
 			if err != nil {
 				c.AbortWithError(500, err)
 				return
 			}
-			err = parserService.StopAllParsersOnlyInGoroutines()
+			fmt.Println("Clearing all db data!")
+			err = db.Begin().
+				Exec("TRUNCATE TABLE krisha.allowed_chats").
+				Exec("TRUNCATE TABLE krisha.parsers_settings").Commit().Error
 			if err != nil {
 				c.AbortWithError(500, err)
 				return
@@ -75,6 +75,11 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 		testGroup.POST("/set-auto-grant-limit", func(c *gin.Context) {
 			nStr := c.Query("n")
 			os.Setenv("AUTO_GRANT_LIMIT", nStr)
+			c.Status(200)
+		})
+		testGroup.POST("/set-auto-stop-interval", func(c *gin.Context) {
+			nStr := c.Query("n")
+			os.Setenv("AUTO_STOP_INTERVAL_SEC", nStr)
 			c.Status(200)
 		})
 	}

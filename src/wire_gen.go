@@ -11,6 +11,7 @@ import (
 	"krisha/src/http"
 	"krisha/src/internal"
 	"krisha/src/internal/repo"
+	"krisha/src/internal/service/admin"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
 	"krisha/src/internal/service/parser"
@@ -28,8 +29,9 @@ func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer) *Services {
 	factory := parser.NewParserFactory(tgServicer, krishaClientService)
 	service := parser.NewParserService(parserSettingsRepository, tgServicer, factory, krishaClientService)
 	allowedChatRepository := repo.NewAllowedChatRepository(db2)
-	permissionsService := internal.NewPermissionsService(allowedChatRepository)
-	tgInteractor := tghttp.NewTgInteractor(tgServicer, service, permissionsService)
+	permissionsService := internal.NewPermissionsService(allowedChatRepository, parserSettingsRepository)
+	adminService := admin.NewService(parserSettingsRepository)
+	tgInteractor := tghttp.NewTgInteractor(tgServicer, service, permissionsService, adminService)
 	controller := http.NewController(tgInteractor, db2, service)
 	mainServices := NewServices(apsLoggerService, apsTgSenderService, krishaClientService, service, tgServicer, tgInteractor, factory, controller)
 	return mainServices

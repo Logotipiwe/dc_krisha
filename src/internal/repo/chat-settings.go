@@ -43,3 +43,9 @@ func (r *ParserSettingsRepository) GetAll() ([]*domain.ParserSettings, error) {
 	err := r.db.Find(&settings).Error
 	return settings, err
 }
+
+func (r *ParserSettingsRepository) GetActive() ([]*domain.ParserSettings, error) {
+	var settings []*domain.ParserSettings
+	err := r.db.Where("enabled = ?", true).Find(&settings).Error
+	return settings, err
+}

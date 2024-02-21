@@ -36,16 +36,18 @@ type KrishaClientService struct {
 }
 
 func NewKrishaClientService(tgService tg.TgServicer) *KrishaClientService {
-	return &KrishaClientService{
+	s := &KrishaClientService{
 		tgService: tgService,
 		client: &http.Client{
 			Timeout: time.Second * 10,
 		},
 	}
+	initVariables()
+	return s
 }
 
 func (s *KrishaClientService) CollectAllPages(filters string, chatID int64, stopped *bool) map[string]*model.Ap {
-	initVariables() //TODO Rewrites in every call, but in var or init blocks CS is not loaded - think where to put it
+	//initVariables() //TODO Rewrites in every call, but in var or init blocks CS is not loaded - think where to put it
 	data := s.RequestMapData(filters)
 	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps for chat " + strconv.FormatInt(chatID, 10) + "...")
 	requestUrl := TargetDomain + TargetPath + filters
@@ -128,7 +130,7 @@ func (s *KrishaClientService) requestPage(url string, page int) model.ApsResult 
 }
 
 func (s *KrishaClientService) RequestMapData(filters string) *model.MapData {
-	initVariables() //TODO check todo above
+	//initVariables() //TODO check todo above
 	req, _ := http.NewRequest("GET", TargetDomain+TargetMapDataPath+filters+TargetMapDataFilterParams, nil)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
 

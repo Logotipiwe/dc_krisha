@@ -22,15 +22,12 @@ func main() {
 		panic(err)
 	}
 
-	//err, _ = services.ParserService.InitOwnerParserSettings()
-	//if err != nil {
-	//	panic(err)
-	//}
 	err = services.ParserService.StartParsersFromDb()
 	if err != nil {
 		panic(err)
 	}
 	go services.Controller.Start()
+	services.ParserService.RunLimitsChecker()
 	services.TgInteractor.StartHandleTgMessages()
 }
 

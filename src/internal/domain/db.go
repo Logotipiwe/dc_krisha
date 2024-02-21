@@ -9,6 +9,7 @@ type ParserSettings struct {
 	Limit               int `gorm:"column:aps_limit"`
 	Enabled             bool
 	IsGrantedExplicitly bool `gorm:"column:is_granted_explicitly"`
+	ApsCount            int  `gorm:"-"`
 }
 
 func (p ParserSettings) TableName() string {

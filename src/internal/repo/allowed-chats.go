@@ -2,6 +2,7 @@ package repo
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"krisha/src/internal/domain"
 	"log"
@@ -53,11 +54,12 @@ func (r *AllowedChatRepository) GetAllChatsAsArray() ([]int64, error) {
 func (r *AllowedChatRepository) Exists(chatID int64) bool {
 	var chat domain.AllowedChat
 	err := r.db.Debug().First(&chat, "chat_id = ?", chatID).Error
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		fmt.Println("Error checking allowed chats table!")
+		log.Println(err)
+	}
 	if err != nil {
 		return false
-	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Println(err)
 	}
 	return true
 }

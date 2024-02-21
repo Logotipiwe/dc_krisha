@@ -13,6 +13,7 @@ import (
 	"krisha/src/pkg"
 	"log"
 	"strconv"
+	"time"
 )
 
 type Service struct {
@@ -56,6 +57,27 @@ func (s *Service) InitOwnerParserSettings() (error, *domain.ParserSettings) {
 	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings), &parserSettings
 }
 
+func (s *Service) RunLimitsChecker() {
+	go func() {
+		for {
+			activeParsers := make(map[int64]*Parser)
+			for id, p := range parsers {
+				activeParsers[id] = p
+			}
+			for _, p := range activeParsers {
+				err, _ := s.checkLimitsFromSettings(p.settings)
+				if errors.Is(err, domain.LimitExceededErr) {
+					err := s.StopParser(p.settings.ID)
+					if err == nil {
+						s.tgService.SendMessage(p.settings.ID, "Парсер остановлен из-за изменения лимита на кол-во квартир. Попробуйте другой фильтр")
+					}
+				}
+			}
+			time.Sleep(2 * time.Second)
+		}
+	}()
+}
+
 func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, limit int) error {
 	parserSettings := domain.ParserSettings{
 		ID:                  chatID,
@@ -80,6 +102,18 @@ func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64) error {
 	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
 }
 
+func (s *Service) CreateParserSettingsFromDenyCommand(chatID int64) (*domain.ParserSettings, error) {
+	parserSettings := &domain.ParserSettings{
+		ID:                  chatID,
+		IntervalSec:         DefaultIntervalSec,
+		Enabled:             false,
+		Limit:               0,
+		Filters:             "",
+		IsGrantedExplicitly: true,
+	}
+	return parserSettings, s.ParserSettingsRepo.UpdateOrCreate(parserSettings)
+}
+
 func (s *Service) UpdateLimitExplicitly(settings *domain.ParserSettings, limit int) (err error, stopped bool) {
 	settings.Limit = limit
 	settings.IsGrantedExplicitly = true
@@ -87,7 +121,7 @@ func (s *Service) UpdateLimitExplicitly(settings *domain.ParserSettings, limit i
 	if err != nil {
 		return err, false
 	}
-	err, _ = s.checkLimits(settings)
+	err, _ = s.checkLimitsFromTargetSite(settings)
 	if err != nil {
 		_, has := parsers[settings.ID]
 		if has {
@@ -128,7 +162,7 @@ func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists b
 			}
 		}
 	}
-	err, apsCount := s.checkLimits(settings)
+	err, apsCount := s.checkLimitsFromTargetSite(settings)
 	if err != nil {
 		return err, false
 	}
@@ -140,12 +174,29 @@ func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists b
 	return s.startNewParser(settings, apsCount), false
 }
 
-func (s *Service) checkLimits(settings *domain.ParserSettings) (err error, apsCount int) {
+func (s *Service) checkLimitsFromTargetSite(settings *domain.ParserSettings) (err error, apsCount int) {
 	mapData := s.krishaClient.RequestMapData(settings.Filters)
 	apsCount = mapData.NbTotal
 	var limit int
-	if pkg.GetAutoGrantLimit() > 0 {
+	if pkg.GetAutoGrantLimit() > 0 && !settings.IsGrantedExplicitly {
 		limit = pkg.GetAutoGrantLimit()
+	} else {
+		limit = settings.Limit
+	}
+	if apsCount > limit {
+		return domain.LimitExceededErr, apsCount
+	}
+	return nil, apsCount
+}
+
+func (s *Service) checkLimitsFromSettings(settings *domain.ParserSettings) (err error, apsCount int) {
+	apsCount = settings.ApsCount
+	var limit int
+	autoGrantLimit := pkg.GetAutoGrantLimit()
+
+	fmt.Println("======= auto: " + strconv.Itoa(autoGrantLimit))
+	if autoGrantLimit > 0 && !settings.IsGrantedExplicitly {
+		limit = autoGrantLimit
 	} else {
 		limit = settings.Limit
 	}
@@ -157,12 +208,43 @@ func (s *Service) checkLimits(settings *domain.ParserSettings) (err error, apsCo
 
 func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter int) error {
 	parser, err := s.parserFactory.CreateParser(settings, apsInFilter)
+	s.runParserAutoStopper(parser)
+
 	if err != nil {
 		return err
 	}
 	parsers[settings.ID] = parser
 	err = parser.startParsing()
 	return err
+}
+
+func (s *Service) runParserAutoStopper(parser *Parser) {
+	go func() {
+		stopTime := pkg.GetAutoStopTime()
+		if stopTime == "" {
+			fmt.Println("Skip running stopper due to AUTO_STOP_TIME absence")
+			return
+		}
+		for {
+			now := time.Now()
+			nowStr := strconv.Itoa(now.Hour()) + ":" + strconv.Itoa(now.Minute())
+			fmt.Println(nowStr)
+			if stopTime == nowStr {
+				fmt.Println("Parser stopper triggered to disable parser at " + nowStr)
+				err := s.StopParser(parser.settings.ID)
+				if err != nil {
+					fmt.Println("Error stopping parser! " + err.Error())
+				}
+				s.tgService.SendMessage(parser.settings.ID, "Парсер автоматически остановлен. Чтобы запустить его заново - отправьте /start")
+				return
+			}
+			if !parser.stopperGoroutineEnabled {
+				fmt.Println("Parser stopper disabled")
+				return
+			}
+			time.Sleep(20 * time.Second)
+		}
+	}()
 }
 
 func (s *Service) StopParser(chatID int64) error {
@@ -214,13 +296,17 @@ func (s *Service) handleParserStartErr(settings *domain.ParserSettings, err erro
 		"Error creating parser from db. " + string(settingsJson) + ". " + err.Error())
 }
 
-func (s *Service) GetSettings(chatID int64) (settings *domain.ParserSettings, isErrNotFound bool, err error) {
+func (s *Service) GetSettings(chatID int64) (settings *domain.ParserSettings, err error) {
 	settings, err = s.ParserSettingsRepo.Get(chatID)
 	if errors.Is(err, gorm.ErrRecordNotFound) && chatID == pkg.GetOwnerChatID() {
 		err, parserSettings := s.InitOwnerParserSettings()
-		return parserSettings, false, err
+		return parserSettings, err
 	}
-	return settings, errors.Is(err, gorm.ErrRecordNotFound), err
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		fmt.Printf("[WARN] Tried to get parser settings for chat %v, but settings not found in db!\n", chatID)
+		return nil, nil
+	}
+	return settings, err
 }
 
 func (s *Service) StopAllParsersOnlyInGoroutines() error {

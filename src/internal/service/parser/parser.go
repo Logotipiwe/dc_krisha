@@ -19,6 +19,7 @@ type Parser struct {
 	collectedAps               map[string]*model.Ap
 	stopped                    bool
 	initialApsCountInFilter    int
+	stopperGoroutineEnabled    bool
 }
 
 func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factory) *Parser {
@@ -31,16 +32,22 @@ func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factor
 		collectedAps:               make(map[string]*model.Ap),
 		stopped:                    false,
 		initialApsCountInFilter:    apsInFilter,
+		stopperGoroutineEnabled:    true,
 	}
 }
 
 func (p *Parser) startParsing() error {
 	p.enabled = true
+	fmt.Println("Started parser for chat " + strconv.FormatInt(p.settings.ID, 10))
 	go func() {
 		p.initParsing()
 		p.doParseForCollectAps()
 		for p.enabled {
-			time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
+			if pkg.IsTesting() {
+				time.Sleep(300 * time.Millisecond) //TODO fix this split
+			} else {
+				time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
+			}
 			p.doParseWithNotification()
 		}
 	}()
@@ -56,10 +63,10 @@ func (p *Parser) initParsing() {
 }
 
 func (p *Parser) doParseWithNotification() {
-	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
 	if !p.enabled {
 		return
 	}
+	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
 	for id, ap := range aps {
 		_, has := p.collectedAps[id]
 		if !has {
@@ -71,6 +78,8 @@ func (p *Parser) doParseWithNotification() {
 		}
 		p.collectedAps[id] = ap
 	}
+	apsCount := len(aps)
+	p.settings.ApsCount = apsCount
 }
 
 func (p *Parser) doParseForCollectAps() {
@@ -100,4 +109,5 @@ func (p *Parser) doParseForCollectAps() {
 func (p *Parser) disable() {
 	p.enabled = false
 	p.stopped = true
+	p.stopperGoroutineEnabled = false
 }
