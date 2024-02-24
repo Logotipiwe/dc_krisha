@@ -13,10 +13,6 @@ func NewParserSettingsRepository(db *gorm.DB) *ParserSettingsRepository {
 	return &ParserSettingsRepository{db: db}
 }
 
-func (r *ParserSettingsRepository) Create(chat *domain.ParserSettings) error {
-	return r.db.Create(chat).Error
-}
-
 func (r *ParserSettingsRepository) Get(chatID int64) (*domain.ParserSettings, error) {
 	var chat domain.ParserSettings
 	err := r.db.First(&chat, "chat_id = ?", chatID).Error
@@ -45,5 +41,11 @@ func (r *ParserSettingsRepository) UpdateOrCreate(d *domain.ParserSettings) erro
 func (r *ParserSettingsRepository) GetAll() ([]*domain.ParserSettings, error) {
 	var settings []*domain.ParserSettings
 	err := r.db.Find(&settings).Error
+	return settings, err
+}
+
+func (r *ParserSettingsRepository) GetActive() ([]*domain.ParserSettings, error) {
+	var settings []*domain.ParserSettings
+	err := r.db.Where("enabled = ?", true).Find(&settings).Error
 	return settings, err
 }

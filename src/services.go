@@ -1,6 +1,7 @@
 package main
 
 import (
+	"krisha/src/http"
 	"krisha/src/internal"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
@@ -13,11 +14,12 @@ type Services struct {
 	ApsLoggerService    *apartments.ApsLoggerService
 	ApsTgSenderService  *apartments.ApsTgSenderService
 	KrishaClientService *api.KrishaClientService
-	TgService           *tg.TgService
+	TgService           tg.TgServicer
 	TgInteractor        *tghttp.TgInteractor
 	ParserService       *parser.Service
 	PermissionsService  *internal.PermissionsService
 	ParserFactory       *parser.Factory
+	Controller          *http.Controller
 }
 
 func NewServices(
@@ -25,9 +27,10 @@ func NewServices(
 	apsTgSenderService *apartments.ApsTgSenderService,
 	krishaClientService *api.KrishaClientService,
 	parserSerivce *parser.Service,
-	tgService *tg.TgService,
+	tgService tg.TgServicer,
 	tgInteractor *tghttp.TgInteractor,
 	parserFactory *parser.Factory,
+	controller *http.Controller,
 ) *Services {
 	return &Services{
 		ApsLoggerService:    apsLoggerService,
@@ -37,5 +40,6 @@ func NewServices(
 		TgInteractor:        tgInteractor,
 		ParserFactory:       parserFactory,
 		ParserService:       parserSerivce,
+		Controller:          controller,
 	}
 }

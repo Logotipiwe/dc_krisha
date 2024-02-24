@@ -2,9 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/Logotipiwe/krisha_model/model"
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
-	"krisha/src/internal/domain"
 	"krisha/src/internal/service/parallel"
 	"krisha/src/internal/service/tg"
 	"log"
@@ -14,43 +14,55 @@ import (
 	"time"
 )
 
-const (
-	mapDataUrl          string = "https://krisha.kz/a/ajax-map/map/arenda/kvartiry/almaty/"
-	url                 string = "https://krisha.kz/a/ajax-map-list/map/arenda/kvartiry/almaty/"
-	pageSize            int    = 20
-	mapDataFilterSuffix        = "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb"
+var (
+	TargetDomain              string
+	TargetMapDataPath         string
+	TargetPath                string
+	PageSize                  int
+	TargetMapDataFilterParams string
 )
+
+func initVariables() {
+	TargetDomain = config.GetConfigOr("TARGET_HOST", "https://krisha.kz")
+	TargetMapDataPath = config.GetConfigOr("TARGET_MAPDATA_PATH", "/a/ajax-map/map/arenda/kvartiry/almaty/")
+	TargetPath = config.GetConfigOr("TARGET_PATH", "/a/ajax-map-list/map/arenda/kvartiry/almaty/")
+	PageSize = 20
+	TargetMapDataFilterParams = config.GetConfigOr("TARGET_MAPDATA_FILTER_PARAMS", "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb")
+}
 
 type KrishaClientService struct {
 	client    *http.Client
-	tgService *tg.TgService
+	tgService tg.TgServicer
 }
 
-func NewKrishaClientService(tgService *tg.TgService) *KrishaClientService {
-	return &KrishaClientService{
+func NewKrishaClientService(tgService tg.TgServicer) *KrishaClientService {
+	s := &KrishaClientService{
 		tgService: tgService,
 		client: &http.Client{
 			Timeout: time.Second * 10,
 		},
 	}
+	initVariables()
+	return s
 }
 
-func (s *KrishaClientService) CollectAllPages(filters string, stopped *bool) map[string]*domain.Ap {
+func (s *KrishaClientService) CollectAllPages(filters string, chatID int64, stopped *bool) map[string]*model.Ap {
+	//initVariables() //TODO Rewrites in every call, but in var or init blocks CS is not loaded - think where to put it
 	data := s.RequestMapData(filters)
-	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps...")
-	requestUrl := url + filters
+	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps for chat " + strconv.FormatInt(chatID, 10) + "...")
+	requestUrl := TargetDomain + TargetPath + filters
 
-	aps := make(map[string]*domain.Ap)
+	aps := make(map[string]*model.Ap)
 	if data.NbTotal <= 0 {
 		return aps
 	}
-	requestsCount := int(math.Ceil(float64(data.NbTotal) / float64(pageSize)))
+	requestsCount := int(math.Ceil(float64(data.NbTotal) / float64(PageSize)))
 
 	log.Println("Start collecting pages by url " + requestUrl)
-	jobs := make([]func() map[string]*domain.Ap, 0)
+	jobs := make([]func() map[string]*model.Ap, 0)
 	for i := 0; i < requestsCount; i++ {
 		num := i + 1
-		jobs = append(jobs, func() map[string]*domain.Ap {
+		jobs = append(jobs, func() map[string]*model.Ap {
 			println("!!!!!!!!!!!!!! REQUESTING PAGE !!!!!!!!!!!!!!!!!!")
 			return s.requestPage(requestUrl, num).Adverts
 		})
@@ -77,7 +89,7 @@ func (s *KrishaClientService) CollectAllPages(filters string, stopped *bool) map
 	return aps
 }
 
-func (s *KrishaClientService) requestPage(url string, page int) domain.ApsResult {
+func (s *KrishaClientService) requestPage(url string, page int) model.ApsResult {
 
 	req, _ := http.NewRequest("GET", url+"&page="+strconv.Itoa(page), nil)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
@@ -91,7 +103,7 @@ func (s *KrishaClientService) requestPage(url string, page int) domain.ApsResult
 
 	log.Println(resp.Status)
 
-	var resultRaw domain.ApsResultRaw
+	var resultRaw model.ApsResultRaw
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -103,23 +115,23 @@ func (s *KrishaClientService) requestPage(url string, page int) domain.ApsResult
 		panic(err)
 	}
 
-	var aps map[string]*domain.Ap
+	var aps map[string]*model.Ap
 	if string(resultRaw.Adverts) != "[]" {
 		err = json.Unmarshal(resultRaw.Adverts, &aps)
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		aps = make(map[string]*domain.Ap)
+		aps = make(map[string]*model.Ap)
 	}
 
 	log.Println("Found " + strconv.Itoa(len(aps)) + " aps")
 	return resultRaw.ToResult(aps)
 }
 
-func (s *KrishaClientService) RequestMapData(filters string) *domain.MapData {
-
-	req, _ := http.NewRequest("GET", mapDataUrl+filters+mapDataFilterSuffix, nil)
+func (s *KrishaClientService) RequestMapData(filters string) *model.MapData {
+	//initVariables() //TODO check todo above
+	req, _ := http.NewRequest("GET", TargetDomain+TargetMapDataPath+filters+TargetMapDataFilterParams, nil)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
 
 	log.Println("Requesting map data.json...")
@@ -131,7 +143,7 @@ func (s *KrishaClientService) RequestMapData(filters string) *domain.MapData {
 
 	log.Println(resp.Status)
 
-	var result domain.MapData
+	var result model.MapData
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -3,11 +3,13 @@ package domain
 import "errors"
 
 type ParserSettings struct {
-	ID          int64 `gorm:"column:chat_id"`
-	Filters     string
-	IntervalSec int
-	Limit       int `gorm:"column:aps_limit"`
-	Enabled     bool
+	ID                  int64 `gorm:"column:chat_id"`
+	Filters             string
+	IntervalSec         int
+	Limit               int `gorm:"column:aps_limit"`
+	Enabled             bool
+	IsGrantedExplicitly bool `gorm:"column:is_granted_explicitly"`
+	ApsCount            int  `gorm:"-"`
 }
 
 func (p ParserSettings) TableName() string {

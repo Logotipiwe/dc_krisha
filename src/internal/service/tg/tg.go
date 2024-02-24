@@ -6,6 +6,15 @@ import (
 	"krisha/src/pkg"
 )
 
+type TgServicer interface {
+	StartReceiveMessages(handler func(update tgbotapi.Update) error)
+	SendMessage(chatID int64, text string) error
+	SendImgMessage(chatID int64, msg string, images []string) error
+	SendMessageToOwner(text string) error
+	SendLogMessageToOwner(text string) error
+	SendImgMessageToOwner(msg string, images []string) error
+}
+
 type TgService struct {
 	bot    *BotAPI
 	logBot *BotAPI

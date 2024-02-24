@@ -1,33 +1,41 @@
 package internal
 
 import (
-	config "github.com/logotipiwe/dc_go_config_lib"
+	"fmt"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/repo"
+	"krisha/src/pkg"
 )
 
 type PermissionsService struct {
 	allowedChatRepository *repo.AllowedChatRepository
+	parserSettingsRepo    *repo.ParserSettingsRepository
 }
 
 func NewPermissionsService(
 	allowedChatRepository *repo.AllowedChatRepository,
+	parserSettingsRepo *repo.ParserSettingsRepository,
 ) *PermissionsService {
 	return &PermissionsService{
 		allowedChatRepository: allowedChatRepository,
+		parserSettingsRepo:    parserSettingsRepo,
 	}
 }
 
-func (s PermissionsService) HasAccess(chatID int64) bool {
-	allowed := s.allowedChatRepository.Exists(chatID)
+func (s PermissionsService) HasAccess(settings *domain.ParserSettings) bool {
+	allowed := s.allowedChatRepository.Exists(settings.ID)
 	if allowed {
 		return true
 	}
-	configInt, intErr := config.GetConfigInt("AUTO_GRANT_LIMIT")
-	if intErr != nil {
+	if pkg.GetAutoGrantLimit() > 0 {
+		if settings.IsGrantedExplicitly && settings.Limit == 0 {
+			return false
+		} else {
+			return true
+		}
+	} else {
 		return false
 	}
-	return configInt > 0
 }
 
 func (s PermissionsService) GrantAccess(chat int64) error {
@@ -35,6 +43,17 @@ func (s PermissionsService) GrantAccess(chat int64) error {
 	return s.allowedChatRepository.CreateIfNotExists(&allowedChat)
 }
 
-func (s PermissionsService) DenyAccess(chat int64) error {
-	return s.allowedChatRepository.Delete(chat)
+func (s PermissionsService) DenyAccess(settings *domain.ParserSettings) error {
+	err := s.allowedChatRepository.Delete(settings.ID)
+	if err != nil {
+		return err
+	}
+	settings.IsGrantedExplicitly = true
+	settings.Limit = 0
+	err = s.parserSettingsRepo.Update(settings)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	return nil
 }

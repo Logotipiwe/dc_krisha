@@ -8,8 +8,10 @@ package main
 
 import (
 	"github.com/jinzhu/gorm"
+	"krisha/src/http"
 	"krisha/src/internal"
 	"krisha/src/internal/repo"
+	"krisha/src/internal/service/admin"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
 	"krisha/src/internal/service/parser"
@@ -19,17 +21,18 @@ import (
 
 // Injectors from di.go:
 
-func InitServices(db *gorm.DB) *Services {
+func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer) *Services {
 	apsLoggerService := apartments.NewApsLoggerService()
-	tgService := tg.NewTgService()
-	apsTgSenderService := apartments.NewApsTgSenderService(tgService)
-	krishaClientService := api.NewKrishaClientService(tgService)
-	parserSettingsRepository := repo.NewParserSettingsRepository(db)
-	factory := parser.NewParserFactory(tgService, krishaClientService)
-	service := parser.NewParserService(parserSettingsRepository, tgService, factory, krishaClientService)
-	allowedChatRepository := repo.NewAllowedChatRepository(db)
-	permissionsService := internal.NewPermissionsService(allowedChatRepository)
-	tgInteractor := tghttp.NewTgInteractor(tgService, service, permissionsService)
-	services := NewServices(apsLoggerService, apsTgSenderService, krishaClientService, service, tgService, tgInteractor, factory)
-	return services
+	apsTgSenderService := apartments.NewApsTgSenderService(tgServicer)
+	krishaClientService := api.NewKrishaClientService(tgServicer)
+	parserSettingsRepository := repo.NewParserSettingsRepository(db2)
+	factory := parser.NewParserFactory(tgServicer, krishaClientService)
+	service := parser.NewParserService(parserSettingsRepository, tgServicer, factory, krishaClientService)
+	allowedChatRepository := repo.NewAllowedChatRepository(db2)
+	permissionsService := internal.NewPermissionsService(allowedChatRepository, parserSettingsRepository)
+	adminService := admin.NewService(parserSettingsRepository)
+	tgInteractor := tghttp.NewTgInteractor(tgServicer, service, permissionsService, adminService)
+	controller := http.NewController(tgInteractor, db2, service)
+	mainServices := NewServices(apsLoggerService, apsTgSenderService, krishaClientService, service, tgServicer, tgInteractor, factory, controller)
+	return mainServices
 }

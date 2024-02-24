@@ -8,7 +8,7 @@ create table if not exists parsers_settings (
     filters text,
     interval_sec int not null default 120,
     aps_limit int not null,
-    enabled bool not null default false
+    enabled boolean not null default false
 );
 
 create table if not exists apartments (
@@ -19,5 +19,3 @@ create table if not exists apartments (
 create table if not exists allowed_chats (
     chat_id bigint not null primary key
 );
-
-INSERT INTO parsers_settings (chat_id, filters, interval_sec, aps_limit, enabled) VALUES (214583870, '', 120, 20000, false);

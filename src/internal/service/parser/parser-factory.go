@@ -7,12 +7,12 @@ import (
 )
 
 type Factory struct {
-	tgService    *tg.TgService
+	tgService    tg.TgServicer
 	krishaClient *api.KrishaClientService
 }
 
 func NewParserFactory(
-	tgService *tg.TgService,
+	tgService tg.TgServicer,
 	krishaClient *api.KrishaClientService,
 ) *Factory {
 	return &Factory{
