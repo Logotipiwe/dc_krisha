@@ -247,7 +247,7 @@ func formatKnownChats(chats []*domain.KnownChat) string {
 		err := json.Unmarshal([]byte(chat.ChatInfo), &update)
 		if err == nil {
 			id := strconv.FormatInt(update.Message.Chat.ID, 10)
-			title := update.Message.Chat.Title
+			title := update.Message.Chat.UserName
 			ans += title + " (" + id + ")"
 			if update.Message.Chat.IsGroup() {
 				ans += " group"

@@ -109,7 +109,7 @@ func createMockUpdate(msg MockIncomeMessage) tgbotapi.Update {
 				ID:                    msg.ChatID,
 				Type:                  "",
 				Title:                 "Title " + strconv.FormatInt(msg.ChatID, 10),
-				UserName:              "",
+				UserName:              "Title " + strconv.FormatInt(msg.ChatID, 10),
 				FirstName:             "",
 				LastName:              "",
 				Photo:                 nil,
