@@ -29,6 +29,7 @@ func (r *ParserSettingsRepository) Update(settings *domain.ParserSettings) error
 			"aps_limit":             settings.Limit,
 			"interval_sec":          settings.IntervalSec,
 			"is_granted_explicitly": settings.IsGrantedExplicitly,
+			"curr_aps_count":        settings.ApsCount,
 		},
 		).Error
 }

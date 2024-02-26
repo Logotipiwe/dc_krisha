@@ -26,7 +26,7 @@ func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer) *Services {
 	apsTgSenderService := apartments.NewApsTgSenderService(tgServicer)
 	krishaClientService := api.NewKrishaClientService(tgServicer)
 	parserSettingsRepository := repo.NewParserSettingsRepository(db2)
-	factory := parser.NewParserFactory(tgServicer, krishaClientService)
+	factory := parser.NewParserFactory(tgServicer, krishaClientService, parserSettingsRepository)
 	service := parser.NewParserService(parserSettingsRepository, tgServicer, factory, krishaClientService)
 	permissionsService := internal.NewPermissionsService()
 	adminService := admin.NewService(parserSettingsRepository)

@@ -56,7 +56,7 @@ func (p *Parser) startParsing() error {
 
 func (p *Parser) initParsing() {
 	log.Println("Parse for chat " + strconv.FormatInt(p.settings.ID, 10))
-	data := p.factory.krishaClient.RequestMapData(p.settings.Filters)
+	data := p.getMapData()
 	p.factory.tgService.SendMessage(p.settings.ID, "Квартир: "+strconv.Itoa(data.NbTotal))
 	p.factory.tgService.SendLogMessageToOwner(fmt.Sprintf(
 		"Parser started for chat %v. filter %v. Interval: %v", p.settings.ID, p.settings.Filters, p.settings.IntervalSec))
@@ -79,7 +79,7 @@ func (p *Parser) doParseWithNotification() {
 		p.collectedAps[id] = ap
 	}
 	apsCount := len(aps)
-	p.settings.ApsCount = apsCount
+	p.updateApsCount(apsCount)
 }
 
 func (p *Parser) doParseForCollectAps() {
@@ -106,8 +106,20 @@ func (p *Parser) doParseForCollectAps() {
 	}
 }
 
+func (p *Parser) getMapData() *model.MapData {
+	return p.factory.krishaClient.RequestMapData(p.settings.Filters)
+}
+
 func (p *Parser) disable() {
 	p.enabled = false
 	p.stopped = true
 	p.stopperGoroutineEnabled = false
+}
+
+func (p *Parser) updateApsCount(apsCount int) {
+	p.settings.ApsCount = apsCount
+	err := p.factory.parserSettingsRepo.Update(p.settings)
+	if err != nil {
+		fmt.Println("[ERROR] err updating curr aps count " + err.Error())
+	}
 }

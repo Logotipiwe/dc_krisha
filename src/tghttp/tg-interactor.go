@@ -11,7 +11,6 @@ import (
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
-	"runtime/debug"
 	"strconv"
 	"strings"
 )
@@ -192,6 +191,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
 	ownerChatMode := i.ownerChatMode
+	i.ownerChatMode = defaultMode
 	switch {
 	case text == "/help":
 		return i.tgService.SendMessageToOwner(ownerHelp + "\r\n\r\n" + userHelp)
@@ -210,11 +210,7 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		return err
 	case ownerChatMode == granting:
-		err := i.handleGrantCommand(text)
-		if err == nil {
-			i.ownerChatMode = defaultMode
-		}
-		return err
+		return i.handleGrantCommand(text)
 	case text == "/deny":
 		err := i.tgService.SendMessageToOwner("Какому чату запретить доступ?")
 		if err == nil {
@@ -222,13 +218,7 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		return err
 	case ownerChatMode == denying:
-		err := i.handleDenyCommand(text)
-		if err != nil {
-			debug.PrintStack()
-		} else {
-			i.ownerChatMode = defaultMode
-		}
-		return err
+		return i.handleDenyCommand(text)
 	}
 	return errors.New(ownerUnacceptedError)
 }
@@ -242,7 +232,7 @@ func formatAdminInfo(info *domain.AdminInfo) string {
 		for _, settings := range info.ActiveParsers {
 			ans += strconv.FormatInt(settings.ID, 10) +
 				` - interval: ` + strconv.Itoa(settings.IntervalSec) +
-				`, aps: ` + strconv.Itoa(0) + ` (TODO)` +
+				`, aps: ` + strconv.Itoa(settings.ApsCount) +
 				`, explicit: ` + strconv.FormatBool(settings.IsGrantedExplicitly)
 			if settings.IsGrantedExplicitly {
 				ans += `, limit: ` + strconv.Itoa(settings.Limit)
