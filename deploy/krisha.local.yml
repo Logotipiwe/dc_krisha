@@ -3,7 +3,9 @@ services:
   krisha:
     container_name: krisha
     restart: always
-    build: ..
+    build:
+      context: ..
+      dockerfile: Dockerfile-debug
     networks:
       - dc-net
     environment:
@@ -15,6 +17,7 @@ services:
       #END CONFIG SERVER
     ports:
       - 83:8083
+      - 40000:40000
 networks:
   dc-net:
     external: true

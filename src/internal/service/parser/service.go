@@ -54,7 +54,7 @@ func (s *Service) InitOwnerParserSettings() (error, *domain.ParserSettings) {
 		Filters:             "",
 		IsGrantedExplicitly: true,
 	}
-	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings), &parserSettings
+	return s.ParserSettingsRepo.Create(&parserSettings), &parserSettings
 }
 
 func (s *Service) RunLimitsChecker() {
@@ -87,7 +87,7 @@ func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, limit int)
 		Filters:             "",
 		IsGrantedExplicitly: true,
 	}
-	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
+	return s.ParserSettingsRepo.Create(&parserSettings)
 }
 
 func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64) error {
@@ -99,10 +99,10 @@ func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64) error {
 		Filters:             "",
 		IsGrantedExplicitly: false,
 	}
-	return s.ParserSettingsRepo.UpdateOrCreate(&parserSettings)
+	return s.ParserSettingsRepo.Create(&parserSettings)
 }
 
-func (s *Service) CreateParserSettingsFromDenyCommand(chatID int64) (*domain.ParserSettings, error) {
+func (s *Service) CreateFromDenyCommand(chatID int64) (*domain.ParserSettings, error) {
 	parserSettings := &domain.ParserSettings{
 		ID:                  chatID,
 		IntervalSec:         DefaultIntervalSec,
@@ -111,7 +111,13 @@ func (s *Service) CreateParserSettingsFromDenyCommand(chatID int64) (*domain.Par
 		Filters:             "",
 		IsGrantedExplicitly: true,
 	}
-	return parserSettings, s.ParserSettingsRepo.UpdateOrCreate(parserSettings)
+	return parserSettings, s.ParserSettingsRepo.Create(parserSettings)
+}
+
+func (s *Service) UpdateFromDenyCommand(settings *domain.ParserSettings) error {
+	settings.Limit = 0
+	settings.IsGrantedExplicitly = true
+	return s.ParserSettingsRepo.Update(settings)
 }
 
 func (s *Service) UpdateLimitExplicitly(settings *domain.ParserSettings, limit int) (err error, stopped bool) {

@@ -36,7 +36,3 @@ type Apartment struct {
 	ID       string `gorm:"primaryKey"`
 	DataJson string
 }
-
-type AllowedChat struct {
-	ChatID int64 `gorm:"primaryKey;column:chat_id"`
-}

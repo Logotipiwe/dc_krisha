@@ -20,13 +20,16 @@ func (r *ParserSettingsRepository) Get(chatID int64) (*domain.ParserSettings, er
 }
 
 func (r *ParserSettingsRepository) Update(settings *domain.ParserSettings) error {
+	//TODO get rid of columns listing
 	return r.db.Debug().Model(settings).
 		Where("chat_id = ?", settings.ID).
 		UpdateColumns(map[string]interface{}{
-			"enabled":      settings.Enabled,
-			"filters":      settings.Filters,
-			"aps_limit":    settings.Limit,
-			"interval_sec": settings.IntervalSec},
+			"enabled":               settings.Enabled,
+			"filters":               settings.Filters,
+			"aps_limit":             settings.Limit,
+			"interval_sec":          settings.IntervalSec,
+			"is_granted_explicitly": settings.IsGrantedExplicitly,
+		},
 		).Error
 }
 
@@ -34,7 +37,7 @@ func (r *ParserSettingsRepository) Delete(chatID int64) error {
 	return r.db.Delete(&domain.ParserSettings{}, chatID).Error
 }
 
-func (r *ParserSettingsRepository) UpdateOrCreate(d *domain.ParserSettings) error {
+func (r *ParserSettingsRepository) Create(d *domain.ParserSettings) error {
 	return r.db.Table(d.TableName()).Where("chat_id = ?", d.ID).Assign(d).FirstOrCreate(d).Error
 }
 

@@ -109,6 +109,10 @@ func (i *TgInteractor) acceptMessageUnsafe(update tgbotapi.Update) error {
 	}
 }
 
+//TODO при авто гранте ни deny ни allow 0  не запрещают запуск
+//TODO автостоп не работает
+//TODO сделать /info в чате для получения chat_id ???
+
 func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
 	chatID := update.Message.Chat.ID
@@ -188,7 +192,6 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
 	ownerChatMode := i.ownerChatMode
-	i.ownerChatMode = defaultMode
 	switch {
 	case text == "/help":
 		return i.tgService.SendMessageToOwner(ownerHelp + "\r\n\r\n" + userHelp)
@@ -207,7 +210,11 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		return err
 	case ownerChatMode == granting:
-		return i.handleGrantCommand(text)
+		err := i.handleGrantCommand(text)
+		if err == nil {
+			i.ownerChatMode = defaultMode
+		}
+		return err
 	case text == "/deny":
 		err := i.tgService.SendMessageToOwner("Какому чату запретить доступ?")
 		if err == nil {
@@ -218,6 +225,8 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		err := i.handleDenyCommand(text)
 		if err != nil {
 			debug.PrintStack()
+		} else {
+			i.ownerChatMode = defaultMode
 		}
 		return err
 	}
@@ -249,25 +258,23 @@ func formatAdminInfo(info *domain.AdminInfo) string {
 func (i *TgInteractor) handleDenyCommand(text string) error {
 	denyingChat, err := strconv.ParseInt(text, 10, 64)
 	if err != nil {
-		i.ownerChatMode = denying
 		return i.tgService.SendMessageToOwner("Кажется это не число, попробуй ещё раз")
 	}
 	stopParserErr := i.parserService.StopParser(denyingChat)
 	settings, err := i.parserService.GetSettings(denyingChat)
-	if settings == nil {
+	if settings == nil && pkg.GetAutoGrantLimit() > 0 {
 		fmt.Println("Creating parser settings from deny...")
-		settings, err = i.parserService.CreateParserSettingsFromDenyCommand(denyingChat)
+		settings, err = i.parserService.CreateFromDenyCommand(denyingChat)
+	} else {
+		if !i.permissionsService.HasAccess(settings) {
+			return i.tgService.SendMessageToOwner("У этого чата и так нет доступа. Спасибо")
+		}
+		err = i.parserService.UpdateFromDenyCommand(settings)
 	}
 	if err != nil {
 		return err
 	}
-	if !i.permissionsService.HasAccess(settings) {
-		return i.tgService.SendMessageToOwner("У этого чата и так нет доступа. Спасибо")
-	}
-	err = i.permissionsService.DenyAccess(settings)
-	if err != nil {
-		return err
-	}
+
 	if !errors.Is(stopParserErr, domain.ParserNotFoundErr) {
 		i.tgService.SendMessage(denyingChat, "Парсер остановлен, обратитесь к администратору")
 	}
@@ -277,12 +284,7 @@ func (i *TgInteractor) handleDenyCommand(text string) error {
 func (i *TgInteractor) handleGrantCommand(text string) error {
 	grantingChat, limit, err := parseGrantMessage(text)
 	if err != nil {
-		i.ownerChatMode = granting
 		return i.tgService.SendMessageToOwner("Ошибка " + err.Error())
-	}
-	err = i.permissionsService.GrantAccess(grantingChat)
-	if err != nil {
-		return err
 	}
 	settings, err := i.parserService.GetSettings(grantingChat)
 	if err != nil {
