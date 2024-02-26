@@ -32,6 +32,15 @@ func (p ParserSettings) ValidForStartParse() error {
 	return nil
 }
 
+type KnownChat struct {
+	ChatID   int64  `gorm:"column:chat_id"`
+	ChatInfo string `gorm:"column:chat_info"`
+}
+
+func (c KnownChat) TableName() string {
+	return "known_chats"
+}
+
 type Apartment struct {
 	ID       string `gorm:"primaryKey"`
 	DataJson string

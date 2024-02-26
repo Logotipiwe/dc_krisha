@@ -26,6 +26,7 @@ func InitServices(db *gorm.DB, tgServicer tg.TgServicer) *Services {
 		apartments.NewApsLoggerService,
 		parser.NewParserService,
 		repo.NewParserSettingsRepository,
+		repo.NewKnownChatsRepo,
 		internal.NewPermissionsService,
 		parser.NewParserFactory,
 		admin.NewService,

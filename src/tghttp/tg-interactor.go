@@ -1,6 +1,7 @@
 package tghttp
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -104,7 +105,15 @@ func (i *TgInteractor) acceptMessageUnsafe(update tgbotapi.Update) error {
 		}
 		return err
 	} else {
+		go i.saveKnownChat(update)
 		return i.acceptUserMessage(update)
+	}
+}
+
+func (i *TgInteractor) saveKnownChat(update tgbotapi.Update) {
+	err := i.adminService.SaveKnownChatInfo(update)
+	if err != nil {
+		i.tgService.SendLogMessageToOwner("[ERROR] err saving known chat: " + err.Error())
 	}
 }
 
@@ -199,9 +208,17 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		info, err := i.adminService.GetGeneralInfo()
 		if err != nil {
 			fmt.Println(err)
-			return i.tgService.SendLogMessageToOwner("Ошибка получения информации: " + err.Error())
+			return i.tgService.SendMessageToOwner("Ошибка получения информации: " + err.Error())
 		}
 		message := formatAdminInfo(info)
+		return i.tgService.SendMessageToOwner(message)
+	case text == "/chats":
+		chats, err := i.adminService.GetKnownChats()
+		if err != nil {
+			fmt.Println(err)
+			return i.tgService.SendMessageToOwner("Ошибка получения чатов: " + err.Error())
+		}
+		message := formatKnownChats(chats)
 		return i.tgService.SendMessageToOwner(message)
 	case text == "/grant":
 		err := i.tgService.SendMessageToOwner("Какому чату выдать доступ? И через пробел - лимит")
@@ -221,6 +238,26 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		return i.handleDenyCommand(text)
 	}
 	return errors.New(ownerUnacceptedError)
+}
+
+func formatKnownChats(chats []*domain.KnownChat) string {
+	ans := "Известные чаты:\n"
+	for _, chat := range chats {
+		update := tgbotapi.Update{}
+		err := json.Unmarshal([]byte(chat.ChatInfo), &update)
+		if err == nil {
+			id := strconv.FormatInt(update.Message.Chat.ID, 10)
+			title := update.Message.Chat.Title
+			ans += title + " (" + id + ")"
+			if update.Message.Chat.IsGroup() {
+				ans += " group"
+			}
+		} else {
+			ans += "Err decoding known chat: " + err.Error()
+		}
+		ans += "\n"
+	}
+	return ans
 }
 
 func formatAdminInfo(info *domain.AdminInfo) string {

@@ -10,6 +10,7 @@ import (
 	"krisha/src/pkg"
 	"krisha/src/tghttp"
 	"os"
+	"strconv"
 )
 
 type Controller struct {
@@ -107,7 +108,7 @@ func createMockUpdate(msg MockIncomeMessage) tgbotapi.Update {
 			Chat: &tgbotapi.Chat{
 				ID:                    msg.ChatID,
 				Type:                  "",
-				Title:                 "",
+				Title:                 "Title " + strconv.FormatInt(msg.ChatID, 10),
 				UserName:              "",
 				FirstName:             "",
 				LastName:              "",
