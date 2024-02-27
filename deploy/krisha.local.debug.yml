@@ -3,7 +3,9 @@ services:
   krisha:
     container_name: krisha
     restart: always
-    build: ..
+    build:
+      context: ..
+      dockerfile: Dockerfile-debug
     networks:
       - dc-net
     environment:

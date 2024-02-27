@@ -156,7 +156,10 @@ func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettin
 	return settings, err
 }
 
-func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists bool) (err error, existed bool) {
+func (s *Service) StartParser(
+	settings *domain.ParserSettings,
+	restartIfExists bool,
+	shouldNotifyWhenStart bool) (err error, existed bool) {
 	_, has := parsers[settings.ID]
 	if has {
 		if !restartIfExists {
@@ -177,7 +180,7 @@ func (s *Service) StartParser(settings *domain.ParserSettings, restartIfExists b
 	if err != nil {
 		return err, false
 	}
-	return s.startNewParser(settings, apsCount), false
+	return s.startNewParser(settings, apsCount, shouldNotifyWhenStart), false
 }
 
 func (s *Service) checkLimitsFromTargetSite(settings *domain.ParserSettings) (err error, apsCount int) {
@@ -212,7 +215,7 @@ func (s *Service) checkLimitsFromSettings(settings *domain.ParserSettings) (err 
 	return nil, apsCount
 }
 
-func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter int) error {
+func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter int, shouldNotifyWhenStart bool) error {
 	parser, err := s.parserFactory.CreateParser(settings, apsInFilter)
 	s.runParserAutoStopper(parser)
 
@@ -220,7 +223,7 @@ func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter in
 		return err
 	}
 	parsers[settings.ID] = parser
-	err = parser.startParsing()
+	err = parser.startParsing(shouldNotifyWhenStart)
 	return err
 }
 
@@ -287,7 +290,7 @@ func (s *Service) StartParsersFromDb() error {
 
 	for _, settings := range settingsFromDb {
 		if settings.Enabled {
-			err, _ := s.StartParser(settings, false)
+			err, _ := s.StartParser(settings, false, false)
 			if err != nil {
 				s.handleParserStartErr(settings, err)
 			}

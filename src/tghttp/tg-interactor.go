@@ -118,9 +118,7 @@ func (i *TgInteractor) saveKnownChat(update tgbotapi.Update) {
 	}
 }
 
-//TODO при авто гранте ни deny ни allow 0  не запрещают запуск
 //TODO автостоп не работает
-//TODO сделать /info в чате для получения chat_id ???
 
 func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
@@ -157,7 +155,7 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		if err != nil {
 			return err
 		}
-		err, existed := i.parserService.StartParser(settings, true)
+		err, existed := i.parserService.StartParser(settings, true, true)
 		if err != nil {
 			return i.handleStartParserErr(settings, err)
 		}
@@ -187,7 +185,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 	if settings == nil || settings.Filters == "" {
 		return i.tgService.SendMessage(chatID, StartAnswer)
 	}
-	err, existed := i.parserService.StartParser(settings, false)
+	err, existed := i.parserService.StartParser(settings, false, true)
 	if err != nil {
 		return i.handleStartParserErr(settings, err)
 	}

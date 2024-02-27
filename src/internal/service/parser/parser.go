@@ -36,15 +36,15 @@ func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factor
 	}
 }
 
-func (p *Parser) startParsing() error {
+func (p *Parser) startParsing(shouldNotifyWhenStart bool) error {
 	p.enabled = true
 	fmt.Println("Started parser for chat " + strconv.FormatInt(p.settings.ID, 10))
 	go func() {
-		p.initParsing()
-		p.doParseForCollectAps()
+		p.initParsing(shouldNotifyWhenStart)
+		p.doParseForCollectAps(shouldNotifyWhenStart)
 		for p.enabled {
 			if pkg.IsTesting() {
-				time.Sleep(300 * time.Millisecond) //TODO fix this split
+				time.Sleep(300 * time.Millisecond)
 			} else {
 				time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
 			}
@@ -54,10 +54,12 @@ func (p *Parser) startParsing() error {
 	return nil
 }
 
-func (p *Parser) initParsing() {
+func (p *Parser) initParsing(shouldNotify bool) {
 	log.Println("Parse for chat " + strconv.FormatInt(p.settings.ID, 10))
 	data := p.getMapData()
-	p.factory.tgService.SendMessage(p.settings.ID, "Квартир: "+strconv.Itoa(data.NbTotal))
+	if shouldNotify {
+		p.factory.tgService.SendMessage(p.settings.ID, "Квартир: "+strconv.Itoa(data.NbTotal))
+	}
 	p.factory.tgService.SendLogMessageToOwner(fmt.Sprintf(
 		"Parser started for chat %v. filter %v. Interval: %v", p.settings.ID, p.settings.Filters, p.settings.IntervalSec))
 }
@@ -82,8 +84,10 @@ func (p *Parser) doParseWithNotification() {
 	p.updateApsCount(apsCount)
 }
 
-func (p *Parser) doParseForCollectAps() {
-	p.factory.tgService.SendMessage(p.settings.ID, "Начинаю собирать существующие квартиры, это займет немного времени...")
+func (p *Parser) doParseForCollectAps(shouldNotiy bool) {
+	if shouldNotiy {
+		p.factory.tgService.SendMessage(p.settings.ID, "Начинаю собирать существующие квартиры, это займет немного времени...")
+	}
 	attempts := 0
 	for !p.areAllCurrentApsCollected && !p.areCollectApsTriesExceeded {
 		aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
@@ -97,11 +101,15 @@ func (p *Parser) doParseForCollectAps() {
 
 		if len(p.collectedAps) >= p.initialApsCountInFilter {
 			p.areAllCurrentApsCollected = true
-			p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, начинаю присылать уведомления о новых...")
+			if shouldNotiy {
+				p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, начинаю присылать уведомления о новых...")
+			}
 		}
 		if attempts > 5 {
 			p.areCollectApsTriesExceeded = true
-			p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, но из-за большого их количества в фильтре - могут иногда присылаться уведомления не по новым квартирам, а по уже существующим")
+			if shouldNotiy {
+				p.factory.tgService.SendMessage(p.settings.ID, "Существующие квартиры собраны, но из-за большого их количества в фильтре - могут иногда присылаться уведомления не по новым квартирам, а по уже существующим")
+			}
 		}
 	}
 }

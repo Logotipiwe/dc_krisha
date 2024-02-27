@@ -63,7 +63,9 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 			}
 			fmt.Println("Clearing all db data!")
 			err = db.Begin().
-				Exec("TRUNCATE TABLE krisha.parsers_settings").Commit().Error
+				Exec("TRUNCATE TABLE krisha.parsers_settings").
+				Exec("TRUNCATE TABLE krisha.known_chats").
+				Commit().Error
 			if err != nil {
 				c.AbortWithError(500, err)
 				return

@@ -2,7 +2,7 @@
   <configuration default="false" name="local dc" type="GoRemoteDebugConfigurationType" factoryName="Go Remote" port="40000">
     <option name="disconnectOption" value="ASK" />
     <method v="2">
-      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Up" run_configuration_type="docker-deploy" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Up Debug" run_configuration_type="docker-deploy" />
     </method>
   </configuration>
 </component>
