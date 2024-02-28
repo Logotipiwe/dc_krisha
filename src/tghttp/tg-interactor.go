@@ -30,6 +30,7 @@ const (
 	defaultMode OwnerChatMode = iota
 	granting
 	denying
+	resettingChat
 )
 
 const (
@@ -37,8 +38,10 @@ const (
 	ownerHelp      = `Здарова админ
 /info - сводка
 /chats - инфа о чатах и id
+/settings - инфа о всех настройках чатов
 /grant - выдать доступ
 /deny - забрать доступ
+/reset - удалить настройки для чата
 /grant with 0 - забрать доступ при включенном авто лимите`
 	userHelp = `Бот работает следующим образом:
 1. Вы отправляете фильтры, по которым ищете квартиру. Инструкция - /filterHelp
@@ -211,7 +214,7 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		message := formatAdminInfo(info)
 		return i.tgService.SendMessageToOwner(message)
-	case text == "/chats":
+	case text == "/chats": //TODO autotests
 		chats, err := i.adminService.GetKnownChats()
 		if err != nil {
 			fmt.Println(err)
@@ -219,6 +222,20 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		message := formatKnownChats(chats)
 		return i.tgService.SendMessageToOwner(message)
+	case text == "/reset": //TODO autotests
+		err := i.tgService.SendMessageToOwner("Какому чату нужно удалить настройки? Если нет авто-гранта - это приведет к потере доступа")
+		if err == nil {
+			i.ownerChatMode = resettingChat
+		}
+		return err
+	case ownerChatMode == resettingChat:
+		return i.handleResetChatSettingsCommand(text)
+	case text == "/settings": //TODO autotests
+		info, err := i.adminService.GetGeneralInfo()
+		if err != nil {
+			return i.tgService.SendMessageToOwner("Ошибка получения настроек: " + err.Error())
+		}
+		return i.tgService.SendMessageToOwner(formatSettingsInfo(info))
 	case text == "/grant":
 		err := i.tgService.SendMessageToOwner("Какому чату выдать доступ? И через пробел - лимит")
 		if err == nil {
@@ -237,6 +254,16 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		return i.handleDenyCommand(text)
 	}
 	return errors.New(ownerUnacceptedError)
+}
+
+func formatSettingsInfo(info *domain.AdminInfo) string {
+	ans := "Настройки юзеров:\n"
+	for _, s := range info.AllParsersSettings {
+		ans += fmt.Sprintf("%v. Interval: %v. Aps: %v, Limit: %v. Exp: %v. Enabled: %v. Filters:\n%v",
+			s.ID, s.IntervalSec, s.ApsCount, s.Limit, s.IsGrantedExplicitly, s.Enabled, s.Filters)
+		ans += "\n\n"
+	}
+	return ans
 }
 
 func formatKnownChats(chats []*domain.KnownChat) string {
@@ -276,8 +303,9 @@ func formatAdminInfo(info *domain.AdminInfo) string {
 			ans += "\n"
 		}
 	} else {
-		ans += "Нет активных парсеров"
+		ans += "Нет активных парсеров\n"
 	}
+	ans += "Посмотреть настройки парсеров - /settings"
 	return ans
 }
 
@@ -383,4 +411,17 @@ func (i *TgInteractor) createParserSettingsFromAutoGrantIfNeeded(chatID int64) e
 		}
 	}
 	return nil
+}
+
+func (i *TgInteractor) handleResetChatSettingsCommand(text string) error {
+	chatID, err := strconv.ParseInt(text, 10, 64)
+	if err != nil {
+		return i.tgService.SendMessageToOwner("Кажется это не число")
+	}
+	err = i.parserService.ResetParserSettingsIfExist(chatID)
+	if err != nil {
+		return i.tgService.SendLogMessageToOwner("Ошибка удаления настроек: " + err.Error())
+	} else {
+		return i.tgService.SendLogMessageToOwner("Настройки удалены")
+	}
 }

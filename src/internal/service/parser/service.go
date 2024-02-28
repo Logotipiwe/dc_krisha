@@ -203,7 +203,6 @@ func (s *Service) checkLimitsFromSettings(settings *domain.ParserSettings) (err 
 	var limit int
 	autoGrantLimit := pkg.GetAutoGrantLimit()
 
-	fmt.Println("======= auto: " + strconv.Itoa(autoGrantLimit))
 	if autoGrantLimit > 0 && !settings.IsGrantedExplicitly {
 		limit = autoGrantLimit
 	} else {
@@ -217,8 +216,6 @@ func (s *Service) checkLimitsFromSettings(settings *domain.ParserSettings) (err 
 
 func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter int, shouldNotifyWhenStart bool) error {
 	parser, err := s.parserFactory.CreateParser(settings, apsInFilter)
-	s.runParserAutoStopper(parser)
-
 	if err != nil {
 		return err
 	}
@@ -227,13 +224,9 @@ func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter in
 	return err
 }
 
-func (s *Service) runParserAutoStopper(parser *Parser) {
+func (s *Service) runParserAutoStopper(parser *Parser, stopTime string) {
+	//TODO запускать на старте приложения
 	go func() {
-		stopTime := pkg.GetAutoStopTime()
-		if stopTime == "" {
-			fmt.Println("Skip running stopper due to AUTO_STOP_TIME absence")
-			return
-		}
 		for {
 			now := time.Now()
 			nowStr := strconv.Itoa(now.Hour()) + ":" + strconv.Itoa(now.Minute())
@@ -328,6 +321,17 @@ func (s *Service) StopAllParsersOnlyInGoroutines() error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (s *Service) ResetParserSettingsIfExist(chatID int64) error {
+	settings, err := s.GetSettings(chatID)
+	if err != nil {
+		return err
+	}
+	if settings != nil {
+		return s.ParserSettingsRepo.Delete(chatID)
 	}
 	return nil
 }

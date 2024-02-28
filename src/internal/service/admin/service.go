@@ -30,6 +30,11 @@ func (s *Service) GetGeneralInfo() (*domain.AdminInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	allSettings, err := s.parserSettingsRepo.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	info.AllParsersSettings = allSettings
 	info.ActiveParsers = active
 	info.DefaultInterval = parser.DefaultIntervalSec
 	info.AutoGrantLimit = pkg.GetAutoGrantLimit()

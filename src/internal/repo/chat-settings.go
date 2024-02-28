@@ -35,7 +35,7 @@ func (r *ParserSettingsRepository) Update(settings *domain.ParserSettings) error
 }
 
 func (r *ParserSettingsRepository) Delete(chatID int64) error {
-	return r.db.Delete(&domain.ParserSettings{}, chatID).Error
+	return r.db.Delete(&domain.ParserSettings{}, "chat_id = ?", chatID).Error
 }
 
 func (r *ParserSettingsRepository) Create(d *domain.ParserSettings) error {

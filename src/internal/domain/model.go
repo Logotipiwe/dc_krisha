@@ -1,7 +1,8 @@
 package domain
 
 type AdminInfo struct {
-	ActiveParsers   []*ParserSettings
-	AutoGrantLimit  int
-	DefaultInterval int
+	ActiveParsers      []*ParserSettings
+	AllParsersSettings []*ParserSettings
+	AutoGrantLimit     int
+	DefaultInterval    int
 }
