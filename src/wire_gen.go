@@ -14,6 +14,7 @@ import (
 	"krisha/src/internal/service/admin"
 	"krisha/src/internal/service/apartments"
 	"krisha/src/internal/service/api"
+	"krisha/src/internal/service/db-messages-log"
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/tghttp"
@@ -21,7 +22,7 @@ import (
 
 // Injectors from di.go:
 
-func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer) *Services {
+func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer, logger db_messages_log.DbMessagesLogger) *Services {
 	apsLoggerService := apartments.NewApsLoggerService()
 	apsTgSenderService := apartments.NewApsTgSenderService(tgServicer)
 	krishaClientService := api.NewKrishaClientService(tgServicer)
@@ -31,7 +32,7 @@ func InitServices(db2 *gorm.DB, tgServicer tg.TgServicer) *Services {
 	permissionsService := internal.NewPermissionsService()
 	knownChatsRepo := repo.NewKnownChatsRepo(db2)
 	adminService := admin.NewService(parserSettingsRepository, knownChatsRepo)
-	tgInteractor := tghttp.NewTgInteractor(tgServicer, service, permissionsService, adminService)
+	tgInteractor := tghttp.NewTgInteractor(tgServicer, service, permissionsService, adminService, logger)
 	controller := http.NewController(tgInteractor, db2, service)
 	mainServices := NewServices(apsLoggerService, apsTgSenderService, krishaClientService, service, tgServicer, tgInteractor, factory, controller)
 	return mainServices

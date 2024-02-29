@@ -45,3 +45,22 @@ type Apartment struct {
 	ID       string `gorm:"primaryKey"`
 	DataJson string
 }
+
+type MessageLogDirection string
+
+const (
+	Income  MessageLogDirection = "INCOME"
+	Outcome MessageLogDirection = "OUTCOME"
+)
+
+type MessageLog struct {
+	ID             string
+	ChatID         int64               `gorm:"column:chat_id"`
+	Text           string              `gorm:"column:text"`
+	Direction      MessageLogDirection `gorm:"column:direction"`
+	AdditionalData string              `gorm:"column:additional_data"`
+}
+
+func (c MessageLog) TableName() string {
+	return "messages_log"
+}

@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/jinzhu/gorm"
 	config "github.com/logotipiwe/dc_go_config_lib"
+	"krisha/src/internal/repo"
+	db_messages_log "krisha/src/internal/service/db-messages-log"
 	"krisha/src/internal/service/tg"
 	service2 "krisha/src/pkg"
 	"log"
@@ -33,13 +35,15 @@ func main() {
 
 func initServices(db *gorm.DB) *Services {
 	isTesting, _ := config.GetConfigBool("IS_TESTING")
+	messagesLogRepo := repo.NewMessagesLogRepo(db)
 	var tgServicer tg.TgServicer
+	dbLogger := db_messages_log.NewLoggerService(messagesLogRepo)
 	if isTesting {
 		tgServicer = tg.NewTgMockService()
 	} else {
-		tgServicer = tg.NewTgService()
+		tgServicer = tg.NewTgService(dbLogger)
 	}
-	services := InitServices(db, tgServicer)
+	services := InitServices(db, tgServicer, dbLogger)
 	return services
 }
 

@@ -9,6 +9,7 @@ import (
 	"krisha/src/internal"
 	"krisha/src/internal/domain"
 	"krisha/src/internal/service/admin"
+	db_messages_log "krisha/src/internal/service/db-messages-log"
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
@@ -22,6 +23,7 @@ type TgInteractor struct {
 	permissionsService *internal.PermissionsService
 	ownerChatMode      OwnerChatMode
 	adminService       *admin.Service
+	logger             db_messages_log.DbMessagesLogger
 }
 
 type OwnerChatMode int
@@ -78,6 +80,7 @@ func NewTgInteractor(
 	parserService *parser.Service,
 	permissionsService *internal.PermissionsService,
 	adminService *admin.Service,
+	logger db_messages_log.DbMessagesLogger,
 ) *TgInteractor {
 	return &TgInteractor{
 		tgService:          tgService,
@@ -85,10 +88,12 @@ func NewTgInteractor(
 		permissionsService: permissionsService,
 		ownerChatMode:      defaultMode,
 		adminService:       adminService,
+		logger:             logger,
 	}
 }
 
 func (i *TgInteractor) AcceptMessage(update tgbotapi.Update) error {
+	go i.logger.LogIncomingUpdate(update) //TODO cover with tests
 	err := i.acceptMessageUnsafe(update)
 	if err != nil {
 		if update.Message.Chat.ID == pkg.GetOwnerChatID() {

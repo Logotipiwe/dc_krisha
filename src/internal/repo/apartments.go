@@ -5,6 +5,7 @@ import (
 	"krisha/src/internal/domain"
 )
 
+// Unused
 type ApartmentRepository struct {
 	db *gorm.DB
 }
