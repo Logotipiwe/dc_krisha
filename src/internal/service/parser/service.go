@@ -48,12 +48,14 @@ func NewParserService(
 func (s *Service) InitOwnerParserSettings() (error, *domain.ParserSettings) {
 	parserSettings := domain.ParserSettings{
 		ID:                  pkg.GetOwnerChatID(),
+		ChatName:            "owner",
 		IntervalSec:         DefaultIntervalSec,
 		Enabled:             false,
 		Limit:               20000,
 		Filters:             "",
 		IsGrantedExplicitly: true,
 	}
+	fmt.Println("Create from init owner")
 	return s.ParserSettingsRepo.Create(&parserSettings), &parserSettings
 }
 
@@ -78,9 +80,10 @@ func (s *Service) RunLimitsChecker() {
 	}()
 }
 
-func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, limit int) error {
+func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, chatName string, limit int) error {
 	parserSettings := domain.ParserSettings{
 		ID:                  chatID,
+		ChatName:            chatName,
 		IntervalSec:         DefaultIntervalSec,
 		Enabled:             false,
 		Limit:               limit,
@@ -90,9 +93,10 @@ func (s *Service) CreateParserSettingsFromExplicitGrant(chatID int64, limit int)
 	return s.ParserSettingsRepo.Create(&parserSettings)
 }
 
-func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64) error {
+func (s *Service) CreateParserSettingsFromAutoGrant(chatID int64, chatName string) error {
 	parserSettings := domain.ParserSettings{
 		ID:                  chatID,
+		ChatName:            chatName,
 		IntervalSec:         DefaultIntervalSec,
 		Enabled:             false,
 		Limit:               0,

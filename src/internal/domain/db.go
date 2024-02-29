@@ -8,8 +8,9 @@ type ParserSettings struct {
 	IntervalSec         int
 	Limit               int `gorm:"column:aps_limit"`
 	Enabled             bool
-	IsGrantedExplicitly bool `gorm:"column:is_granted_explicitly"`
-	ApsCount            int  `gorm:"column:curr_aps_count"`
+	IsGrantedExplicitly bool   `gorm:"column:is_granted_explicitly"`
+	ApsCount            int    `gorm:"column:curr_aps_count"`
+	ChatName            string `gorm:"column:chat_name"`
 }
 
 func (p ParserSettings) TableName() string {

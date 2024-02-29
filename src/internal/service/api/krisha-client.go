@@ -5,6 +5,7 @@ import (
 	"github.com/Logotipiwe/krisha_model/model"
 	config "github.com/logotipiwe/dc_go_config_lib"
 	"io"
+	"krisha/src/internal/domain"
 	"krisha/src/internal/service/parallel"
 	"krisha/src/internal/service/tg"
 	"log"
@@ -46,11 +47,10 @@ func NewKrishaClientService(tgService tg.TgServicer) *KrishaClientService {
 	return s
 }
 
-func (s *KrishaClientService) CollectAllPages(filters string, chatID int64, stopped *bool) map[string]*model.Ap {
+func (s *KrishaClientService) CollectAllPages(settings *domain.ParserSettings, stopped *bool) map[string]*model.Ap {
 	//initVariables() //TODO Rewrites in every call, but in var or init blocks CS is not loaded - think where to put it
-	data := s.RequestMapData(filters)
-	_ = s.tgService.SendLogMessageToOwner("Collecting " + strconv.Itoa(data.NbTotal) + " aps for chat " + strconv.FormatInt(chatID, 10) + "...")
-	requestUrl := TargetDomain + TargetPath + filters
+	data := s.RequestMapData(settings.Filters)
+	requestUrl := TargetDomain + TargetPath + settings.Filters
 
 	aps := make(map[string]*model.Ap)
 	if data.NbTotal <= 0 {
@@ -63,7 +63,7 @@ func (s *KrishaClientService) CollectAllPages(filters string, chatID int64, stop
 	for i := 0; i < requestsCount; i++ {
 		num := i + 1
 		jobs = append(jobs, func() map[string]*model.Ap {
-			println("!!!!!!!!!!!!!! REQUESTING PAGE !!!!!!!!!!!!!!!!!!")
+			log.Printf("[%v. ] Requesting page %v...\n", strconv.FormatInt(settings.ID, 10), strconv.Itoa(num))
 			return s.requestPage(requestUrl, num).Adverts
 		})
 	}
@@ -94,7 +94,6 @@ func (s *KrishaClientService) requestPage(url string, page int) model.ApsResult 
 	req, _ := http.NewRequest("GET", url+"&page="+strconv.Itoa(page), nil)
 	req.Header.Add("x-requested-with", "XMLHttpRequest")
 
-	log.Println("Requesting page " + strconv.Itoa(page) + "...")
 	resp, err := s.client.Do(req)
 	if err != nil {
 		panic(err)

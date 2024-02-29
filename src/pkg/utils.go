@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	. "github.com/logotipiwe/dc_go_config_lib"
 	"log"
 	"math"
@@ -63,4 +64,14 @@ func GetAutoGrantLimit() int {
 
 func GetAutoStopTime() string {
 	return GetConfig("AUTO_STOP_TIME")
+}
+
+func GetChatNameFromUpdate(update tgbotapi.Update) string {
+	if update.Message.Chat.Type == "private" {
+		return update.Message.Chat.UserName
+	} else if update.Message.Chat.Type == "group" {
+		return update.Message.Chat.Title
+	} else {
+		return "unknown"
+	}
 }

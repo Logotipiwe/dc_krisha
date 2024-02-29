@@ -68,7 +68,7 @@ func (p *Parser) doParseWithNotification() {
 	if !p.enabled {
 		return
 	}
-	aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
+	aps := p.factory.krishaClient.CollectAllPages(p.settings, &p.stopped)
 	for id, ap := range aps {
 		_, has := p.collectedAps[id]
 		if !has {
@@ -90,7 +90,7 @@ func (p *Parser) doParseForCollectAps(shouldNotiy bool) {
 	}
 	attempts := 0
 	for !p.areAllCurrentApsCollected && !p.areCollectApsTriesExceeded {
-		aps := p.factory.krishaClient.CollectAllPages(p.settings.Filters, p.settings.ID, &p.stopped)
+		aps := p.factory.krishaClient.CollectAllPages(p.settings, &p.stopped)
 		if p.stopped {
 			return
 		}

@@ -93,7 +93,6 @@ func NewTgInteractor(
 }
 
 func (i *TgInteractor) AcceptMessage(update tgbotapi.Update) error {
-	go i.logger.LogIncomingUpdate(update) //TODO cover with tests
 	err := i.acceptMessageUnsafe(update)
 	if err != nil {
 		if update.Message.Chat.ID == pkg.GetOwnerChatID() {
@@ -102,6 +101,7 @@ func (i *TgInteractor) AcceptMessage(update tgbotapi.Update) error {
 			i.tgService.SendMessage(update.Message.Chat.ID, errorMessage)
 		}
 	}
+	i.logUpdateData(update)
 	return err
 }
 
@@ -132,7 +132,7 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	text := update.Message.Text
 	chatID := update.Message.Chat.ID
 
-	err := i.createParserSettingsFromAutoGrantIfNeeded(chatID)
+	err := i.createParserSettingsFromAutoGrantIfNeeded(chatID, update)
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 		}
 		return err
 	case ownerChatMode == granting:
-		return i.handleGrantCommand(text)
+		return i.handleGrantCommand(update)
 	case text == "/deny":
 		err := i.tgService.SendMessageToOwner("Какому чату запретить доступ?")
 		if err == nil {
@@ -298,10 +298,12 @@ func formatAdminInfo(info *domain.AdminInfo) string {
 	if len(info.ActiveParsers) > 0 {
 		ans += "Активные парсеры:\n"
 		for _, settings := range info.ActiveParsers {
-			ans += strconv.FormatInt(settings.ID, 10) +
-				` - interval: ` + strconv.Itoa(settings.IntervalSec) +
-				`, aps: ` + strconv.Itoa(settings.ApsCount) +
-				`, explicit: ` + strconv.FormatBool(settings.IsGrantedExplicitly)
+			ans += fmt.Sprintf(`[%v] %v - interval: %v, aps: %v, explicit: %v`,
+				strconv.FormatInt(settings.ID, 10),
+				settings.ChatName,
+				strconv.Itoa(settings.IntervalSec),
+				strconv.Itoa(settings.ApsCount),
+				strconv.FormatBool(settings.IsGrantedExplicitly))
 			if settings.IsGrantedExplicitly {
 				ans += `, limit: ` + strconv.Itoa(settings.Limit)
 			}
@@ -340,7 +342,8 @@ func (i *TgInteractor) handleDenyCommand(text string) error {
 	return i.tgService.SendMessageToOwner("Доступ запрещен чату " + text)
 }
 
-func (i *TgInteractor) handleGrantCommand(text string) error {
+func (i *TgInteractor) handleGrantCommand(update tgbotapi.Update) error {
+	text := update.Message.Text
 	grantingChat, limit, err := parseGrantMessage(text)
 	if err != nil {
 		return i.tgService.SendMessageToOwner("Ошибка " + err.Error())
@@ -350,7 +353,8 @@ func (i *TgInteractor) handleGrantCommand(text string) error {
 		return err
 	}
 	if settings == nil {
-		err = i.parserService.CreateParserSettingsFromExplicitGrant(grantingChat, limit)
+		err = i.parserService.CreateParserSettingsFromExplicitGrant(
+			grantingChat, pkg.GetChatNameFromUpdate(update), limit)
 		if err != nil {
 			return err
 		}
@@ -402,7 +406,10 @@ func (i *TgInteractor) handleStartParserErr(settings *domain.ParserSettings, err
 	return nil
 }
 
-func (i *TgInteractor) createParserSettingsFromAutoGrantIfNeeded(chatID int64) error {
+func (i *TgInteractor) createParserSettingsFromAutoGrantIfNeeded(chatID int64, update tgbotapi.Update) error {
+	if chatID == pkg.GetOwnerChatID() {
+		return nil
+	}
 	settings, err := i.parserService.GetSettings(chatID)
 	autoGrantLimit, _ := config.GetConfigInt("AUTO_GRANT_LIMIT")
 	if err != nil {
@@ -410,7 +417,7 @@ func (i *TgInteractor) createParserSettingsFromAutoGrantIfNeeded(chatID int64) e
 	}
 
 	if settings == nil && autoGrantLimit > 0 {
-		err = i.parserService.CreateParserSettingsFromAutoGrant(chatID)
+		err = i.parserService.CreateParserSettingsFromAutoGrant(chatID, pkg.GetChatNameFromUpdate(update))
 		if err != nil {
 			return err
 		}
@@ -425,8 +432,23 @@ func (i *TgInteractor) handleResetChatSettingsCommand(text string) error {
 	}
 	err = i.parserService.ResetParserSettingsIfExist(chatID)
 	if err != nil {
-		return i.tgService.SendLogMessageToOwner("Ошибка удаления настроек: " + err.Error())
+		return i.tgService.SendMessageToOwner("Ошибка удаления настроек: " + err.Error())
 	} else {
-		return i.tgService.SendLogMessageToOwner("Настройки удалены")
+		return i.tgService.SendMessageToOwner("Настройки удалены")
+	}
+}
+
+func (i *TgInteractor) logUpdateData(update tgbotapi.Update) {
+	go i.logger.LogIncomingUpdate(update) //TODO cover with tests
+	//update chatName in settings
+	settings, err := i.parserService.GetSettings(update.Message.Chat.ID)
+	if err != nil {
+		return
+	}
+	if settings != nil {
+		if settings.ID != pkg.GetOwnerChatID() {
+			settings.ChatName = pkg.GetChatNameFromUpdate(update)
+			i.parserService.ParserSettingsRepo.Update(settings)
+		}
 	}
 }
