@@ -58,7 +58,7 @@ func GetParserSleepingInterval(settings *domain.ParserSettings) time.Duration {
 	nonActiveInterval := GetNonActiveParsingIntervalMs()
 
 	if activeHours == nil {
-		return time.Duration(activeInterval) * time.Second
+		return time.Duration(activeInterval) * time.Millisecond
 	} else {
 		currHour := time.Now().Hour()
 		//active - 8-23; 8-0; 8-1
