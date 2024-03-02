@@ -84,6 +84,16 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 			os.Setenv("AUTO_STOP_INTERVAL_SEC", nStr)
 			c.Status(200)
 		})
+		testGroup.POST("/set-env", func(c *gin.Context) {
+			key := c.Query("key")
+			value := c.Query("value")
+			os.Setenv(key, value)
+			c.Status(200)
+		})
+		testGroup.GET("/get-env", func(c *gin.Context) {
+			key := c.Query("key")
+			c.String(200, os.Getenv(key))
+		})
 	}
 
 	return controller

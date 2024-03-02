@@ -1,0 +1,21 @@
+version: '3.6'
+services:
+  krisha:
+    container_name: krisha
+    restart: always
+    build: ..
+    networks:
+      - dc-net
+    environment:
+      #CONFIG SERVER
+      CONFIG_SERVER_URL: http://config_server
+      SERVICE_NAME: krisha
+      NAMESPACE: dev-dc-test
+      M_TOKEN: ${M_TOKEN}
+      #END CONFIG SERVER
+    ports:
+      - 83:8083
+      - 40000:40000
+networks:
+  dc-net:
+    external: true

@@ -14,3 +14,6 @@ TARGET_MAPDATA_FILTER_PARAMS -
     default "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb"
 AUTO_STOP_TIME - time in format hh:mm when all parsers stop working. If absent - parsers won't stop
 AUTO_GRANT_LIMIT - enables granting access automatically. Creates parser settings when first message comes
+ACTIVE_PARSE_HOURS - period of active parsing, format "h-h", example "8-23". In active hours - ACTIVE_PARSE_INTERVAL_SEC is user, NON_ACTIVE_PARSE_INTERVAL_SEC otherwise. If absent - all time considered active.
+ACTIVE_PARSE_INTERVAL_MS - default interval of parsing in active hours. Defaults to 120 000
+NON_ACTIVE_PARSE_INTERVAL_MS - default interval of parsing in non-active hours. Defaults to 600 000

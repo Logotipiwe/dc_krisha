@@ -43,11 +43,7 @@ func (p *Parser) startParsing(shouldNotifyWhenStart bool) error {
 		p.initParsing(shouldNotifyWhenStart)
 		p.doParseForCollectAps(shouldNotifyWhenStart)
 		for p.enabled {
-			if pkg.IsTesting() {
-				time.Sleep(300 * time.Millisecond)
-			} else {
-				time.Sleep(time.Duration(p.settings.IntervalSec) * time.Second)
-			}
+			p.sleepForInterval() //TODO cover with tests
 			p.doParseWithNotification()
 		}
 	}()
@@ -130,4 +126,8 @@ func (p *Parser) updateApsCount(apsCount int) {
 	if err != nil {
 		fmt.Println("[ERROR] err updating curr aps count " + err.Error())
 	}
+}
+
+func (p *Parser) sleepForInterval() {
+	time.Sleep(pkg.GetParserSleepingInterval(p.settings))
 }
