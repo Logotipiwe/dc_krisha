@@ -9,17 +9,19 @@ import (
 )
 
 func GetActiveParsingIntervalMs() int {
-	got, err := GetConfigInt("ACTIVE_PARSE_INTERVAL_MS")
-	if err != nil || got <= 0 {
-		return 120 * 1000
+	defaultVal := 120 * 1000
+	got := GetConfigIntOr("ACTIVE_PARSE_INTERVAL_MS", defaultVal)
+	if got <= 0 {
+		return defaultVal
 	}
 	return got
 }
 
 func GetNonActiveParsingIntervalMs() int {
-	got, err := GetConfigInt("NON_ACTIVE_PARSE_INTERVAL_MS")
-	if err != nil || got <= 0 {
-		return 600 * 1000
+	defaultVal := 600 * 1000
+	got := GetConfigIntOr("NON_ACTIVE_PARSE_INTERVAL_MS", defaultVal)
+	if got <= 0 {
+		return defaultVal
 	}
 	return got
 }

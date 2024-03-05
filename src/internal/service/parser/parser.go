@@ -129,5 +129,7 @@ func (p *Parser) updateApsCount(apsCount int) {
 }
 
 func (p *Parser) sleepForInterval() {
-	time.Sleep(pkg.GetParserSleepingInterval(p.settings))
+	pkg.SleepWithInterruption(func() time.Duration {
+		return pkg.GetParserSleepingInterval(p.settings)
+	}, 10*time.Second)
 }

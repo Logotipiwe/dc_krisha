@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/google/wire v0.5.0
 	github.com/jinzhu/gorm v1.9.16
-	github.com/logotipiwe/dc_go_config_lib v1.0.5
+	github.com/logotipiwe/dc_go_config_lib v1.0.6
 )
 
 require (
