@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/jinzhu/gorm"
+	"krisha/src/internal/domain"
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
@@ -79,11 +80,11 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 			os.Setenv("AUTO_GRANT_LIMIT", nStr)
 			c.Status(200)
 		})
-		testGroup.POST("/set-auto-stop-interval", func(c *gin.Context) {
-			nStr := c.Query("n")
-			os.Setenv("AUTO_STOP_INTERVAL_SEC", nStr)
-			c.Status(200)
-		})
+		//testGroup.POST("/set-auto-stop-interval", func(c *gin.Context) {
+		//	nStr := c.Query("n")
+		//	os.Setenv("AUTO_STOP_INTERVAL_SEC", nStr)
+		//	c.Status(200)
+		//})
 		testGroup.POST("/set-env", func(c *gin.Context) {
 			key := c.Query("key")
 			value := c.Query("value")
@@ -93,6 +94,15 @@ func NewController(tgInteractor *tghttp.TgInteractor, db *gorm.DB,
 		testGroup.GET("/get-env", func(c *gin.Context) {
 			key := c.Query("key")
 			c.String(200, os.Getenv(key))
+		})
+		testGroup.GET("/parsers-settings", func(c *gin.Context) {
+			res := make([]*domain.ParserSettings, 0)
+			err := db.Model(domain.ParserSettings{}).Find(&res).Error
+			if err != nil {
+				c.AbortWithError(500, err)
+				return
+			}
+			c.JSON(200, res)
 		})
 	}
 

@@ -37,12 +37,14 @@ func NewParserService(
 	if intErr == nil && defaultIntervalSec > 0 {
 		DefaultIntervalSec = defaultIntervalSec
 	}
-	return &Service{
+	s := &Service{
 		ParserSettingsRepo: parserSettingsRepo,
 		tgService:          tgService,
 		parserFactory:      parserFactory,
 		krishaClient:       krishaClient,
 	}
+	parserFactory.parserService = s
+	return s
 }
 
 func (s *Service) InitOwnerParserSettings() (error, *domain.ParserSettings) {
@@ -163,7 +165,8 @@ func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettin
 func (s *Service) StartParser(
 	settings *domain.ParserSettings,
 	restartIfExists bool,
-	shouldNotifyWhenStart bool) (err error, existed bool) {
+	shouldNotifyWhenStart bool,
+	shouldUpdateStartTime bool) (err error, existed bool) {
 	_, has := parsers[settings.ID]
 	if has {
 		if !restartIfExists {
@@ -180,6 +183,9 @@ func (s *Service) StartParser(
 		return err, false
 	}
 	settings.Enabled = true
+	if shouldUpdateStartTime {
+		settings.StartTime = time.Now().Format(pkg.DateFormat)
+	}
 	err = s.ParserSettingsRepo.Update(settings)
 	if err != nil {
 		return err, false
@@ -228,31 +234,6 @@ func (s *Service) startNewParser(settings *domain.ParserSettings, apsInFilter in
 	return err
 }
 
-func (s *Service) runParserAutoStopper(parser *Parser, stopTime string) {
-	//TODO запускать на старте приложения
-	go func() {
-		for {
-			now := time.Now()
-			nowStr := strconv.Itoa(now.Hour()) + ":" + strconv.Itoa(now.Minute())
-			fmt.Println(nowStr)
-			if stopTime == nowStr {
-				fmt.Println("Parser stopper triggered to disable parser at " + nowStr)
-				err := s.StopParser(parser.settings.ID)
-				if err != nil {
-					fmt.Println("Error stopping parser! " + err.Error())
-				}
-				s.tgService.SendMessage(parser.settings.ID, "Парсер автоматически остановлен. Чтобы запустить его заново - отправьте /start")
-				return
-			}
-			if !parser.stopperGoroutineEnabled {
-				fmt.Println("Parser stopper disabled")
-				return
-			}
-			time.Sleep(20 * time.Second)
-		}
-	}()
-}
-
 func (s *Service) StopParser(chatID int64) error {
 	settings, err := s.ParserSettingsRepo.Get(chatID)
 	if err != nil {
@@ -287,7 +268,7 @@ func (s *Service) StartParsersFromDb() error {
 
 	for _, settings := range settingsFromDb {
 		if settings.Enabled {
-			err, _ := s.StartParser(settings, false, false)
+			err, _ := s.StartParser(settings, false, false, false)
 			if err != nil {
 				s.handleParserStartErr(settings, err)
 			}

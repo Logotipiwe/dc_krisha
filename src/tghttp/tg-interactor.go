@@ -163,7 +163,7 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 		if err != nil {
 			return err
 		}
-		err, existed := i.parserService.StartParser(settings, true, true)
+		err, existed := i.parserService.StartParser(settings, true, true, true)
 		if err != nil {
 			return i.handleStartParserErr(settings, err)
 		}
@@ -193,7 +193,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 	if settings == nil || settings.Filters == "" {
 		return i.tgService.SendMessage(chatID, StartAnswer)
 	}
-	err, existed := i.parserService.StartParser(settings, false, true)
+	err, existed := i.parserService.StartParser(settings, false, true, true)
 	if err != nil {
 		return i.handleStartParserErr(settings, err)
 	}

@@ -1,6 +1,8 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+)
 
 type ParserSettings struct {
 	ID                  int64 `gorm:"column:chat_id"`
@@ -11,6 +13,7 @@ type ParserSettings struct {
 	IsGrantedExplicitly bool   `gorm:"column:is_granted_explicitly"`
 	ApsCount            int    `gorm:"column:curr_aps_count"`
 	ChatName            string `gorm:"column:chat_name"`
+	StartTime           string `gorm:"column:start_timestamp"`
 }
 
 func (p ParserSettings) TableName() string {

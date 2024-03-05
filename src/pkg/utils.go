@@ -12,6 +12,8 @@ import (
 	"strconv"
 )
 
+const DateFormat = "2006-01-02 15:04:05"
+
 func InitDb() (error, *sql.DB) {
 	connectionStr := fmt.Sprintf("%v:%v@tcp(%v)/%v", GetConfig("DB_LOGIN"), GetConfig("DB_PASS"),
 		GetConfig("DB_HOST"), GetConfig("DB_NAME"))
@@ -62,8 +64,8 @@ func GetAutoGrantLimit() int {
 	return configInt
 }
 
-func GetAutoStopTime() string {
-	return GetConfig("AUTO_STOP_TIME")
+func GetAutoStopHours() int {
+	return GetConfigIntOr("AUTO_STOP_HOURS", 0)
 }
 
 func GetChatNameFromUpdate(update tgbotapi.Update) string {

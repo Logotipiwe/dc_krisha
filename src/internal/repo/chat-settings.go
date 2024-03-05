@@ -31,6 +31,7 @@ func (r *ParserSettingsRepository) Update(settings *domain.ParserSettings) error
 			"is_granted_explicitly": settings.IsGrantedExplicitly,
 			"curr_aps_count":        settings.ApsCount,
 			"chat_name":             settings.ChatName,
+			"start_timestamp":       settings.StartTime,
 		},
 		).Error
 }

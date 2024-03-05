@@ -19,21 +19,7 @@ type Parser struct {
 	collectedAps               map[string]*model.Ap
 	stopped                    bool
 	initialApsCountInFilter    int
-	stopperGoroutineEnabled    bool
-}
-
-func newParser(settings *domain.ParserSettings, apsInFilter int, factory *Factory) *Parser {
-	return &Parser{
-		factory:                    factory,
-		settings:                   settings,
-		areAllCurrentApsCollected:  false,
-		areCollectApsTriesExceeded: false,
-		enabled:                    true,
-		collectedAps:               make(map[string]*model.Ap),
-		stopped:                    false,
-		initialApsCountInFilter:    apsInFilter,
-		stopperGoroutineEnabled:    true,
-	}
+	startTime                  time.Time
 }
 
 func (p *Parser) startParsing(shouldNotifyWhenStart bool) error {
@@ -45,6 +31,7 @@ func (p *Parser) startParsing(shouldNotifyWhenStart bool) error {
 		for p.enabled {
 			p.sleepForInterval() //TODO cover with tests
 			p.doParseWithNotification()
+			p.checkForExpiredAutoStopTime() //TODO cover with tests
 		}
 	}()
 	return nil
@@ -117,7 +104,6 @@ func (p *Parser) getMapData() *model.MapData {
 func (p *Parser) disable() {
 	p.enabled = false
 	p.stopped = true
-	p.stopperGoroutineEnabled = false
 }
 
 func (p *Parser) updateApsCount(apsCount int) {
@@ -132,4 +118,18 @@ func (p *Parser) sleepForInterval() {
 	pkg.SleepWithInterruption(func() time.Duration {
 		return pkg.GetParserSleepingInterval(p.settings)
 	}, 10*time.Second)
+}
+
+func (p *Parser) checkForExpiredAutoStopTime() {
+	stopHours := pkg.GetAutoStopHours()
+	if stopHours == 0 {
+		return
+	}
+	sinceStart := time.Since(p.startTime)
+	if sinceStart > (time.Duration(stopHours) * time.Hour) {
+		err := p.factory.parserService.StopParser(p.settings.ID)
+		if err == nil {
+			p.factory.tgService.SendMessage(p.settings.ID, "Парсер автоматически остановлен по истечению таймера. Если вы успешно нашли жилье - просим отправить фидбек администрации :) \n\n Если вы ещё не нашли нужный вариант - запустите парсер заново командой /start")
+		}
+	}
 }
