@@ -9,7 +9,7 @@ func NewGormDb() (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	gormDB, err := gorm.Open("mysql", db)
+	gormDB, err := gorm.Open("postgres", db)
 	if err != nil {
 		return nil, err
 	}

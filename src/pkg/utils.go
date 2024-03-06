@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	_ "github.com/lib/pq"
 	. "github.com/logotipiwe/dc_go_config_lib"
 	"log"
 	"math"
@@ -15,9 +15,10 @@ import (
 const DateFormat = "2006-01-02 15:04:05"
 
 func InitDb() (error, *sql.DB) {
-	connectionStr := fmt.Sprintf("%v:%v@tcp(%v)/%v", GetConfig("DB_LOGIN"), GetConfig("DB_PASS"),
+	connectionStr := fmt.Sprintf("postgres://%v:%v@%v:5432/%v?sslmode=disable",
+		GetConfig("DB_LOGIN"), GetConfig("DB_PASS"),
 		GetConfig("DB_HOST"), GetConfig("DB_NAME"))
-	conn, err := sql.Open("mysql", connectionStr)
+	conn, err := sql.Open("postgres", connectionStr)
 	if err != nil {
 		return err, nil
 	}
