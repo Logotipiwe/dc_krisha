@@ -36,9 +36,7 @@ CREATE TABLE messages_log
     text            TEXT,
     direction       varchar(255)                        NOT NULL,
     additional_data TEXT,
-    "order"         serial,
-    time            timestamp default current_timestamp not null,
-    constraint messages_log_pk unique ("order")
+    time            timestamp default current_timestamp not null
 );
 
 create table if not exists known_chats (

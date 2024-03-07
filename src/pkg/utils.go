@@ -16,8 +16,8 @@ const DateFormat = "2006-01-02 15:04:05"
 
 func InitDb() (error, *sql.DB) {
 	connectionStr := fmt.Sprintf("postgres://%v:%v@%v:5432/%v?sslmode=disable",
-		GetConfig("DB_LOGIN"), GetConfig("DB_PASS"),
-		GetConfig("DB_HOST"), GetConfig("DB_NAME"))
+		GetConfig("PG_LOGIN"), GetConfig("PG_PASS"),
+		GetConfig("PG_HOST"), GetConfig("PG_NAME"))
 	conn, err := sql.Open("postgres", connectionStr)
 	if err != nil {
 		return err, nil
