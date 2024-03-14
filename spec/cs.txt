@@ -17,3 +17,8 @@ AUTO_GRANT_LIMIT - enables granting access automatically. Creates parser setting
 ACTIVE_PARSE_HOURS - period of active parsing, format "h-h", example "8-23". In active hours - ACTIVE_PARSE_INTERVAL_SEC is user, NON_ACTIVE_PARSE_INTERVAL_SEC otherwise. If absent - all time considered active.
 ACTIVE_PARSE_INTERVAL_MS - default interval of parsing in active hours. Defaults to 120 000
 NON_ACTIVE_PARSE_INTERVAL_MS - default interval of parsing in non-active hours. Defaults to 600 000
+
+TG_MESSAGE_HELP - /help answer for users. Default - "Ошибка получения сообщения с инструкцией. Обратитесь к администратору"
+TG_MESSAGE_FILTER_HELP - /filterHelp answer for users. Default - "Ошибка получения сообщения с инструкцией. Обратитесь к администратору"
+TG_MESSAGE_START - /start answer for users. Default - "Ошибка получения приветственного сообщения. Обратитесь к администратору"
+TG_MESSAGE_FAQ - /faq answer for users. Default - "Часто задаваемые вопросы ещё не заполнены. Обратитесь к администратору"

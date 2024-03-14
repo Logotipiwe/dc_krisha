@@ -45,32 +45,8 @@ const (
 /deny - забрать доступ
 /reset - удалить настройки для чата
 /grant with 0 - забрать доступ при включенном авто лимите`
-	userHelp = `Бот работает следующим образом:
-1. Вы отправляете фильтры, по которым ищете квартиру. Инструкция - /filterHelp
-2. Бот присылает вам уведомления о новых квартирах
-3. Вы можете писать /stop или /start, чтобы отключать или включать обратно уведомления
-4. Вы можете отправить другой фильтр, чтобы бот перенастроился на него`
-	ownerUnacceptedError = "unknown admin command"
-	errorMessage         = "Произошла ошибка :( \r\n Попробуйте начать заново с /start"
-	StartAnswer          = `Привет! Это бот для получения уведомлений о новых квартирах по фильтрам. Для начала работы нужно установить нужный фильтр.
-/help - общая информация и инструкция.`
-	filterHelpAnswer = `Чтобы установить фильтр, нужно:
-1. Зайти на https://krisha.kz/map/arenda/kvartiry/almaty/
-
-2. Выбрать нужные фильтры в панели над картой (полезно бывает обвести область или поставить "от хозяев"). У вашего чата есть ограничение по количеству квартир в фильтре, поэтому постарайтесь оставить только те, которые вас правда интересуют
-
-3. ВАЖНО - нажать синюю кнопку "показать результаты", чтобы фильтр отобразился в ссылке
-
-4. Данные фильтра должны появиться в адресной строке браузера (ссылка на текущую страницу). Скопируйте текущую ссылку из адресной строки. Пример нужной ссылки:
-https://krisha.kz/map/arenda/kvartiry/almaty/?areas=&das[live.rooms]=1&das[price][to]=234343&das[who]=1&das[who_match][4]=4&zoom=14&lat=43.23518&lon=76.93178
-
-5. Отправьте ссылку сюда, бот сразу начнёт искать варианты по этому фильтру.
-
-Чтобы ИЗМЕНИТЬ фильтр - просто отправьте новую ссылку с фильтром и бот перенастроится на него
-
-/stop - остановить уведомления
-/help - общая информация
-По доп. вопросам обращайтесь к администратору :)`
+	ownerUnacceptedError       = "unknown admin command"
+	errorMessage               = "Произошла ошибка :( \r\n Попробуйте начать заново с /start"
 	noAccessMessage            = "У вас нет доступа к боту. Обратитесь к администратору"
 	limitExceededMessageFormat = "Превышен лимит в %v квартир в вашем фильтре. Попробуйте другой фильтр"
 )
@@ -149,9 +125,11 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 
 	switch {
 	case strings.HasPrefix(text, "/help"):
-		return i.tgService.SendMessage(chatID, userHelp)
+		return i.tgService.SendMessage(chatID, pkg.GetTgHelpMessage())
 	case strings.HasPrefix(text, "/filterHelp"):
-		return i.tgService.SendMessage(chatID, filterHelpAnswer)
+		return i.tgService.SendMessage(chatID, pkg.GetTgFilterHelpMessage())
+	case strings.HasPrefix(text, "/faq"):
+		return i.tgService.SendMessage(chatID, pkg.GetTgFaqMessage())
 	case strings.HasPrefix(text, "/start"):
 		return i.handleUserStartCommand(chatID)
 	case strings.Contains(text, "krisha.kz"):
@@ -191,7 +169,7 @@ func (i *TgInteractor) handleUserStartCommand(chatID int64) error {
 		return err
 	}
 	if settings == nil || settings.Filters == "" {
-		return i.tgService.SendMessage(chatID, StartAnswer)
+		return i.tgService.SendMessage(chatID, pkg.GetTgStartMessage())
 	}
 	err, existed := i.parserService.StartParser(settings, false, true, true)
 	if err != nil {
@@ -210,7 +188,7 @@ func (i *TgInteractor) acceptAdminMessage(update tgbotapi.Update) error {
 	i.ownerChatMode = defaultMode
 	switch {
 	case text == "/help":
-		return i.tgService.SendMessageToOwner(ownerHelp + "\r\n\r\n" + userHelp)
+		return i.tgService.SendMessageToOwner(ownerHelp + "\r\n\r\n" + pkg.GetTgHelpMessage())
 	case text == "/info":
 		info, err := i.adminService.GetGeneralInfo()
 		if err != nil {
