@@ -25,8 +25,8 @@ var (
 
 func initVariables() {
 	TargetDomain = config.GetConfigOr("TARGET_HOST", "https://krisha.kz")
-	TargetMapDataPath = config.GetConfigOr("TARGET_MAPDATA_PATH", "/a/ajax-map/map/arenda/kvartiry/almaty/")
-	TargetPath = config.GetConfigOr("TARGET_PATH", "/a/ajax-map-list/map/arenda/kvartiry/almaty/")
+	TargetMapDataPath = config.GetConfigOr("TARGET_MAPDATA_PATH", "/a/ajax-map")
+	TargetPath = config.GetConfigOr("TARGET_PATH", "/a/ajax-map-list")
 	PageSize = 20
 	TargetMapDataFilterParams = config.GetConfigOr("TARGET_MAPDATA_FILTER_PARAMS", "&lat=43.23814&lon=76.94297&zoom=13&precision=6&bounds=txwwjn%2Ctxwtzb")
 }
@@ -89,6 +89,7 @@ func (s *KrishaClientService) CollectAllPages(settings *domain.ParserSettings, s
 	return aps
 }
 
+// TODO return err from jobs if occured
 func (s *KrishaClientService) requestPage(url string, page int) model.ApsResult {
 
 	req, _ := http.NewRequest("GET", url+"&page="+strconv.Itoa(page), nil)

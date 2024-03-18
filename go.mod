@@ -14,6 +14,10 @@ require (
 	github.com/logotipiwe/dc_go_config_lib v1.0.6
 )
 
+replace (
+	github.com/Logotipiwe/krisha_model v1.0.0 => ../krisha_model
+)
+
 require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect

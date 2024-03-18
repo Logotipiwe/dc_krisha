@@ -13,6 +13,7 @@ import (
 	"krisha/src/internal/service/parser"
 	"krisha/src/internal/service/tg"
 	"krisha/src/pkg"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -133,11 +134,12 @@ func (i *TgInteractor) acceptUserMessage(update tgbotapi.Update) error {
 	case strings.HasPrefix(text, "/start"):
 		return i.handleUserStartCommand(chatID)
 	case strings.Contains(text, "krisha.kz"):
-		pair := strings.Split(text, "?")
-		if len(pair) < 2 {
-			return i.tgService.SendMessage(chatID, "Неверный формат ссылки с фильтрами. Ссылка должна начинаться на krisha.kz и содержать фильтры через знак ?")
+		url, err := url.Parse(text)
+		if err != nil {
+			fmt.Println("error parsing user filters: " + err.Error())
+			return i.tgService.SendMessage(chatID, "Неверный формат ссылки с фльтрами, попробуйте ещё раз")
 		}
-		settings, err := i.parserService.SetFilters(chatID, "?"+pair[1])
+		settings, err := i.parserService.SetFilters(chatID, url.RequestURI())
 		if err != nil {
 			return err
 		}

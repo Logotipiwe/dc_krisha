@@ -145,6 +145,7 @@ func (s *Service) UpdateLimitExplicitly(settings *domain.ParserSettings, limit i
 }
 
 func (s *Service) SetFilters(chatID int64, filters string) (*domain.ParserSettings, error) {
+	//TODO filters = /arenda/house/almaty?filters
 	if chatID == pkg.GetOwnerChatID() {
 		err, _ := s.InitOwnerParserSettings()
 		if err != nil {

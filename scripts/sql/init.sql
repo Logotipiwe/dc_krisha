@@ -29,7 +29,7 @@ create table if not exists allowed_chats
     chat_id bigint not null primary key
 );
 
-CREATE TABLE messages_log
+CREATE TABLE IF NOT EXISTS messages_log
 (
     id              VARCHAR(36) PRIMARY KEY,
     chat_id         BIGINT                              NOT NULL,
