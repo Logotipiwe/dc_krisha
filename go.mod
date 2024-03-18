@@ -3,7 +3,7 @@ module krisha
 go 1.20
 
 require (
-	github.com/Logotipiwe/krisha_model v1.0.0
+	github.com/Logotipiwe/krisha_model v1.0.1
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-sql-driver/mysql v1.7.1
@@ -11,12 +11,13 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/google/wire v0.5.0
 	github.com/jinzhu/gorm v1.9.16
+	github.com/lib/pq v1.10.9
 	github.com/logotipiwe/dc_go_config_lib v1.0.6
 )
 
-replace (
-	github.com/Logotipiwe/krisha_model v1.0.0 => ../krisha_model
-)
+//replace (
+//	github.com/Logotipiwe/krisha_model v1.0.0 => ../krisha_model
+//)
 
 require (
 	github.com/andybalholm/cascadia v1.3.1 // indirect
@@ -34,7 +35,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

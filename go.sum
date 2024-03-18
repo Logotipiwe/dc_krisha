@@ -2,6 +2,8 @@ github.com/Logotipiwe/krisha_model v0.0.0-20240215075507-b3537f468668 h1:By+QdbS
 github.com/Logotipiwe/krisha_model v0.0.0-20240215075507-b3537f468668/go.mod h1:6/nlIVBoB82ct5y4o8VNM6154esSdnuuSOinnx81HGg=
 github.com/Logotipiwe/krisha_model v1.0.0 h1:r9mZNBHYWDunyIZDHQVE4/2He5sCLoeu4BGAapVuz2Q=
 github.com/Logotipiwe/krisha_model v1.0.0/go.mod h1:K+8VHp4MAoFUb0elv+n5vhVdayON8Y7i/hJN/bmN8E4=
+github.com/Logotipiwe/krisha_model v1.0.1 h1:r1N9n6g4/paoFrftf53dt0o7M1mwvIZZSYAK/RLf4Yk=
+github.com/Logotipiwe/krisha_model v1.0.1/go.mod h1:K+8VHp4MAoFUb0elv+n5vhVdayON8Y7i/hJN/bmN8E4=
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/PuerkitoBio/goquery v1.8.1 h1:uQxhNlArOIdbrH1tr0UXwdVFgDcZDrZVdcpygAcwmWM=
 github.com/PuerkitoBio/goquery v1.8.1/go.mod h1:Q8ICL1kNUJ2sXGoAhPGUdYDJvgQgHzJsnnd3H7Ho5jQ=
