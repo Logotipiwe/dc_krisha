@@ -5,6 +5,8 @@ create database krisha;
 drop table if exists parsers_settings;
 drop table if exists apartments;
 drop table if exists allowed_chats;
+drop table if exists messages_log;
+drop table if exists known_chats;
 create table if not exists parsers_settings
 (
     chat_id               bigint       not null primary key,

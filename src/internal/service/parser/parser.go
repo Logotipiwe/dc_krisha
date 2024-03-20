@@ -58,7 +58,7 @@ func (p *Parser) doParseWithNotification() {
 			photosUrls := pkg.Map(ap.Photos, func(p *model.Photo) string {
 				return p.Src
 			})
-			p.factory.tgService.SendImgMessage(p.settings.ID, "Новая квартира: "+ap.GetLink(), photosUrls[0:pkg.Min(len(photosUrls), 10)])
+			p.factory.tgService.SendImgMessage(p.settings.ID, "Новое объявление: "+ap.GetLink(), photosUrls[0:pkg.Min(len(photosUrls), 10)])
 			go p.factory.tgService.SendLogMessageToOwner(fmt.Sprintf("У чата %v квартира %v", p.settings.ID, ap.GetLink()))
 		}
 		p.collectedAps[id] = ap
